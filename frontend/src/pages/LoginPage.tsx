@@ -229,12 +229,12 @@ export const LoginPage = () => {
                 {resetStatus === 'sending' ? 'Sending...' : 'Send Reset OTP'}
               </button>
             </form>
-{resetStatus === 'success' && (
+            {resetStatus === 'success' && (
               <div className="mt-4 p-4 bg-success/10 border border-success/30 rounded-md">
                 <p className="text-sm font-medium text-success mb-2">✅ OTP sent successfully!</p>
                 <p className="text-xs text-muted-foreground mb-3">Check console or email. OTP expires in 15 min.</p>
                 <div className="text-xs bg-muted p-3 rounded space-y-2">
-                  <p><strong>Next: </strong><Link to={\`/admin/verify-otp?email=\${resetEmail}\`} className="text-primary hover:underline font-medium">Verify OTP in UI</Link></p>
+                  <p><strong>Next: </strong><Link to={`/admin/verify-otp?email=${resetEmail}`} className="text-primary hover:underline font-medium">Verify OTP in UI</Link></p>
                   <p className="text-xs text-muted-foreground">Click link to enter OTP and set new password.</p>
                 </div>
               </div>
