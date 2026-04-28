@@ -1,0 +1,580 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role         @default(STAFF)
+  isActive     Boolean  @default(true)
+  branchId     String?
+  managerId    String?
+  createdAt    DateTime @default(now())
+
+  branch       Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  manager      User?   @relation("ManagedStaff", fields: [managerId], references: [id], onDelete: SetNull)
+  managedStaff User[]  @relation("ManagedStaff")
+
+  // Relations
+  orders     Order[]
+  repairJobs RepairJob[] @relation("AssignedTo")
+  purchases  Purchase[]
+  expenses   Expense[]
+  purchaseOrders     PurchaseOrder[] @relation("RequestedBy")
+  stockMovements     StockMovement[] @relation("MovementUser")
+  repairSparePurchases RepairSparePurchase[]
+
+  @@map("users")
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  users          User[]
+  purchaseOrders PurchaseOrder[]
+
+  @@map("branches")
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  sku         String  @unique
+  name        String
+  description String?
+  category    Category
+  categoryId  String?
+  supplierId  String?
+  brand       String
+  model       String?
+  price       Float
+  cost        Float
+  stockQty    Int     @default(0)
+  minStock    Int     @default(5)
+  imageUrl    String?
+  isAvailable Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categoryType ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  supplier     Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  // Relations
+  orderItems  OrderItem[]
+  repairParts RepairPart[]
+  purchaseItems PurchaseItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockMovements StockMovement[]
+
+  @@index([categoryId])
+  @@index([supplierId])
+  @@map("products")
+}
+
+model Supplier {
+  id            String   @id @default(cuid())
+  name          String
+  contactName   String?
+  email         String?  @unique
+  phone         String?
+  address       String?
+  notes         String?
+  creditBalance Float    @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products              Product[]
+  purchaseOrders        PurchaseOrder[]
+  repairSpareProducts   RepairSpareProduct[]
+  payments              SupplierPayment[]
+  purchases             Purchase[]          @relation("SupplierPurchases")
+
+  @@map("suppliers")
+}
+
+model SupplierPayment {
+  id          String   @id @default(cuid())
+  supplierId  String
+  amount      Float
+  paymentType String          // CREDIT or DEBIT (credit = supplier gives us stuff, debit = we pay supplier)
+  reference   String?         // e.g. purchase invoice no, payment ref
+  description String?
+  paymentDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  @@map("supplier_payments")
+}
+
+model ProductCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  icon        String?
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+
+  products          Product[]
+  repairSpareProducts RepairSpareProduct[]
+
+  @@map("product_categories")
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  orderNumber  String   @unique
+  customerId   String
+  orderType    OrderType
+  status       OrderStatus   @default(PENDING)
+  totalAmount  Float
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  staffId      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  staff    User?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
+
+  // Relations
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Float
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@map("order_items")
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String   @unique
+  address       String?
+  passwordHash  String?
+  walletBalance Float     @default(0)
+  referralCode  String   @unique
+  referredById  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  referredBy Customer? @relation("Referral", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals  Customer[] @relation("Referral")
+
+  // Relations
+  orders       Order[]
+  repairJobs   RepairJob[]
+  walletTransactions WalletTransaction[]
+  communityPosts     CommunityPost[]
+  communityComments  CommunityComment[]
+  chatMessages       ChatMessage[]
+
+  @@map("customers")
+}
+
+model RepairJob {
+  id               String   @id @default(cuid())
+  ticketNumber     String   @unique
+  customerId       String
+  repairCategoryId String?
+  deviceModel      String
+  imeiSerial       String?
+  issueDescription String
+  diagnosis        String?
+  location         String?
+  scheduledDate    DateTime?
+  status           RepairStatus   @default(RECEIVED)
+  estimatedCost    Float?
+  finalCost        Float?
+  advancePaid      Float     @default(0)
+  assignedToId     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  completedAt      DateTime?
+
+  customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  repairCategory RepairCategory? @relation(fields: [repairCategoryId], references: [id], onDelete: SetNull)
+  assignedTo     User?           @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  // Relations
+  repairParts RepairPart[]
+
+  @@map("repair_jobs")
+}
+
+model RepairPart {
+  id          String @id @default(cuid())
+  repairJobId String
+  productId   String
+  quantity    Int
+  unitPrice   Float
+
+  repairJob RepairJob @relation(fields: [repairJobId], references: [id], onDelete: Restrict)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@map("repair_parts")
+}
+
+model RepairCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  basePrice   Float?
+  estimatedTime String?
+  createdAt   DateTime @default(now())
+
+  repairJobs RepairJob[]
+
+  @@map("repair_categories")
+}
+
+model Purchase {
+  id           String   @id @default(cuid())
+  managerId    String
+  supplier     String
+  supplierId   String?
+  invoiceNo    String   @unique
+  totalAmount  Float
+  paidAmount   Float    @default(0)
+  purchaseDate DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  manager  User      @relation(fields: [managerId], references: [id], onDelete: Restrict)
+  supplierRef Supplier? @relation("SupplierPurchases", fields: [supplierId], references: [id], onDelete: SetNull)
+  items    PurchaseItem[]
+
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id           String @id @default(cuid())
+  purchaseId   String
+  productId    String
+  quantity     Int
+  unitCost     Float
+  sellingPrice Float  @default(0)
+  total        Float
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@map("purchase_items")
+}
+
+// =============================================================
+// Advanced Inventory: Purchase Orders & Stock Movements
+// =============================================================
+
+model PurchaseOrder {
+  id             String     @id @default(cuid())
+  orderNumber    String     @unique
+  supplierId     String
+  requestedById  String
+  branchId       String?
+  status         POStatus   @default(DRAFT)
+  totalCost      Float       @default(0)
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  receivedAt     DateTime?
+
+  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  requestedBy   User     @relation("RequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
+  branch        Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  items         PurchaseOrderItem[]
+  stockMovements StockMovement[]
+
+  @@index([supplierId])
+  @@index([branchId])
+  @@index([status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String  @id @default(cuid())
+  purchaseOrderId String
+  productId       String
+  quantity        Int
+  receivedQty     Int      @default(0)
+  unitCost        Float
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_items")
+}
+
+model StockMovement {
+  id              String       @id @default(cuid())
+  productId       String
+  quantity        Int          // positive for in, negative for out
+  type            MovementType
+  reference       String?      // e.g. order id, repair id, PO id, manual reason
+  purchaseOrderId String?
+  userId          String?
+  createdAt       DateTime     @default(now())
+
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  user          User?         @relation("MovementUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  managerId   String
+  description String
+  amount      Float
+  expenseDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager User @relation(fields: [managerId], references: [id], onDelete: Restrict)
+
+  @@map("expenses")
+}
+
+
+
+model Banner {
+  id           String  @id @default(cuid())
+  title        String
+  imageUrl     String
+  linkUrl      String?
+  isActive     Boolean @default(true)
+  displayOrder Int     @default(0)
+  createdAt    DateTime @default(now())
+
+  @@map("banners")
+}
+
+model WalletTransaction {
+  id            String   @id @default(cuid())
+  userId        String
+  amount        Float
+  transactionType String
+  description   String?
+  referenceId   String?
+  referenceType String?
+  createdAt     DateTime @default(now())
+
+  user Customer @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("wallet_transactions")
+}
+
+model CommunityPost {
+  id       String   @id @default(cuid())
+  userId   String
+  title    String
+  content  String
+  imageUrls String?
+  postType String?
+  likesCount Int    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user Customer @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // Relations
+  comments CommunityComment[]
+
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id       String   @id @default(cuid())
+  postId   String
+  userId   String
+  content  String
+  createdAt DateTime @default(now())
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Restrict)
+  user Customer     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("community_comments")
+}
+
+model ChatMessage {
+  id       String   @id @default(cuid())
+  userId   String
+  message  String
+  isUser   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user Customer @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@map("chat_messages")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+enum Role {
+  STAFF
+  MANAGER
+  ADMIN
+  TECHNICIAN
+}
+
+enum Category {
+  MOBILE
+  ACCESSORY
+  SIM_CARD
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+}
+
+enum OrderType {
+  IN_STORE
+  ONLINE
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RepairStatus {
+  RECEIVED
+  DIAGNOSIS
+  APPROVED
+  IN_PROGRESS
+  COMPLETED
+  DELIVERED
+  CANCELLED
+}
+
+enum POStatus {
+  DRAFT
+  SENT
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model RepairSpareProduct {
+  id                String   @id @default(cuid())
+  name              String
+  sku               String   @unique
+  description       String?
+  categoryId        String?
+  supplierId        String?
+  brand             String   @default("Generic")
+  model             String?
+  compatibleDevices String?
+  purchasePrice     Float    @default(0)
+  sellingPrice      Float    @default(0)
+  stockQty          Int      @default(0)
+  minStock          Int      @default(5)
+  imageUrl          String?
+  isAvailable       Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  categoryType ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  supplier     Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  purchaseItems RepairSparePurchaseItem[]
+
+  @@index([categoryId])
+  @@index([supplierId])
+  @@map("repair_spare_products")
+}
+
+model RepairSparePurchase {
+  id           String   @id @default(cuid())
+  managerId    String
+  supplier     String
+  invoiceNo    String   @unique
+  totalAmount  Float
+  notes        String?
+  purchaseDate DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  manager User @relation(fields: [managerId], references: [id], onDelete: Restrict)
+  items   RepairSparePurchaseItem[]
+
+  @@map("repair_spare_purchases")
+}
+
+model RepairSparePurchaseItem {
+  id            String @id @default(cuid())
+  purchaseId    String
+  spareProductId String
+  quantity      Int
+  unitCost      Float
+  sellingPrice  Float  @default(0)
+  total         Float
+
+  purchase     RepairSparePurchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  spareProduct RepairSpareProduct  @relation(fields: [spareProductId], references: [id], onDelete: Restrict)
+
+  @@map("repair_spare_purchase_items")
+}
+
+enum MovementType {
+  SALE
+  REPAIR_USE
+  PURCHASE_RECEIVE
+  MANUAL_ADJUSTMENT
+  RETURN
+}

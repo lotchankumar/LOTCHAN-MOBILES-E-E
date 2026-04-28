@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Lotchan Repair Center Design System */
+
+@layer base {
+  :root {
+    /* Instagram Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    /* Card & Surface */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    /* Primary - Instagram Blue */
+    --primary: 204 88% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 204 88% 65%;
+    --primary-dark: 204 88% 41%;
+
+    /* Secondary - Subtle Gray */
+    --secondary: 0 0% 98%;
+    --secondary-foreground: 0 0% 0%;
+
+    /* Accent - Instagram Gradient */
+    --accent: 329 90% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 329 90% 68%;
+    --accent-dark: 329 90% 44%;
+
+    /* Muted */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Success */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 0%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 0 0% 86%;
+    --input: 0 0% 86%;
+    --ring: 204 88% 53%;
+
+    /* Radius - Instagram style (more rounded) */
+    --radius: 0.875rem;
+
+    /* Instagram Gradients */
+    --gradient-primary: linear-gradient(45deg, hsl(329 90% 56%), hsl(43 96% 56%), hsl(204 88% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(329 90% 56%), hsl(329 90% 68%));
+    --gradient-story: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+
+    /* Shadows - Subtle like Instagram */
+    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-strong: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+    /* Animations */
+    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* Instagram Dark Mode */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 204 88% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 204 88% 65%;
+    --primary-dark: 204 88% 41%;
+
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 329 90% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 329 90% 68%;
+    --accent-dark: 329 90% 44%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 204 88% 53%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  h1 {
+    @apply text-4xl font-bold;
+  }
+  
+  h2 {
+    @apply text-2xl font-semibold;
+  }
+  
+  h3 {
+    @apply text-xl font-medium text-foreground/80;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply relative overflow-hidden rounded-2xl px-4 py-2 text-white font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-all duration-300;
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-medium);
+  }
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+  }
+  .btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-secondary text-secondary-foreground font-medium rounded-2xl hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors;
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 border border-input bg-background rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors;
+  }
+  
+  .card {
+    @apply bg-card text-card-foreground rounded-xl shadow-medium border border-border p-6 transition-all;
+  }
+
+  /* Status Badges */
+  .status-requested {
+    @apply bg-warning/20 text-warning-foreground border border-warning/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-progress {
+    @apply bg-primary/20 text-primary-dark border border-primary/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-completed {
+    @apply bg-success/20 text-success border border-success/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-delivered {
+    @apply bg-accent/20 text-accent-dark border border-accent/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+}
