@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Lotchan Repair Center Design System */
+
+@layer base {
+  :root {
+    /* Instagram Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    /* Card & Surface */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    /* Primary - Instagram Blue */
+    --primary: 204 88% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 204 88% 65%;
+    --primary-dark: 204 88% 41%;
+
+    /* Secondary - Subtle Gray */
+    --secondary: 0 0% 98%;
+    --secondary-foreground: 0 0% 0%;
+
+    /* Accent - Instagram Gradient */
+    --accent: 329 90% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 329 90% 68%;
+    --accent-dark: 329 90% 44%;
+
+    /* Muted */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Success */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 0%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 0 0% 86%;
+    --input: 0 0% 86%;
+    --ring: 204 88% 53%;
+
+    /* Radius - Instagram style (more rounded) */
+    --radius: 0.875rem;
+
+    /* Instagram Gradients */
+    --gradient-primary: linear-gradient(45deg, hsl(329 90% 56%), hsl(43 96% 56%), hsl(204 88% 53%));
+    --gradient-accent: linear-gradient(135deg, hsl(329 90% 56%), hsl(329 90% 68%));
+    --gradient-story: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+
+    /* Shadows - Subtle like Instagram */
+    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-strong: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+    /* Animations */
+    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* Instagram Dark Mode */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 204 88% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 204 88% 65%;
+    --primary-dark: 204 88% 41%;
+
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 13%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 329 90% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 329 90% 68%;
+    --accent-dark: 329 90% 44%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 204 88% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+@layer components {
+  /* Service Action Buttons */
+  .service-button {
+    @apply relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300;
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .service-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+  }
+  
+  .service-button-accent {
+    background: var(--gradient-accent);
+  }
+  
+  /* Status Badges */
+  .status-requested {
+    @apply bg-yellow-100 text-yellow-800 border-yellow-200;
+  }
+  
+  .status-progress {
+    @apply bg-blue-100 text-blue-800 border-blue-200;
+  }
+  
+  .status-completed {
+    @apply bg-green-100 text-green-800 border-green-200;
+  }
+  
+  .status-delivered {
+    @apply bg-purple-100 text-purple-800 border-purple-200;
+  }
+  
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}

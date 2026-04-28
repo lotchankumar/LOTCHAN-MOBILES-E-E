@@ -1,0 +1,49 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import FloatingChatButton from "./components/FloatingChatButton";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Home from "./pages/Home";
+import Shop from "./pages/Shop";
+import Repair from "./pages/Repair";
+import Community from "./pages/Community";
+import Profile from "./pages/Profile";
+import OrderTracking from "./pages/OrderTracking";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/repair" element={<Repair />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/tracking" element={<OrderTracking />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <FloatingChatButton />
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
