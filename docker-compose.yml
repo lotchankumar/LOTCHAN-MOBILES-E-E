@@ -52,7 +52,7 @@ services:
       sh -c "
         echo 'Waiting for PostgreSQL to be ready...' &&
         sleep 5 &&
-        npx prisma db push &&
+        npx prisma migrate deploy &&
         node dist/server.js
       "
 
