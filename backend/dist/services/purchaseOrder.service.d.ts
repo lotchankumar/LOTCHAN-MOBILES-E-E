@@ -52,7 +52,7 @@ export declare const purchaseOrderService: {
         supplierId: string;
         orderNumber: string;
         requestedById: string;
-        status: import("@prisma/client").$Enums.POStatus;
+        status: import(".prisma/client").$Enums.POStatus;
         totalCost: number;
         receivedAt: Date | null;
     })[]>;
@@ -64,7 +64,7 @@ export declare const purchaseOrderService: {
         stockMovements: {
             id: string;
             createdAt: Date;
-            type: import("@prisma/client").$Enums.MovementType;
+            type: import(".prisma/client").$Enums.MovementType;
             reference: string | null;
             quantity: number;
             productId: string;
@@ -97,7 +97,7 @@ export declare const purchaseOrderService: {
                 description: string | null;
                 supplierId: string | null;
                 sku: string;
-                category: import("@prisma/client").$Enums.Category;
+                category: import(".prisma/client").$Enums.Category;
                 categoryId: string | null;
                 brand: string;
                 model: string | null;
@@ -125,7 +125,7 @@ export declare const purchaseOrderService: {
         supplierId: string;
         orderNumber: string;
         requestedById: string;
-        status: import("@prisma/client").$Enums.POStatus;
+        status: import(".prisma/client").$Enums.POStatus;
         totalCost: number;
         receivedAt: Date | null;
     }>;
@@ -161,7 +161,7 @@ export declare const purchaseOrderService: {
         supplierId: string;
         orderNumber: string;
         requestedById: string;
-        status: import("@prisma/client").$Enums.POStatus;
+        status: import(".prisma/client").$Enums.POStatus;
         totalCost: number;
         receivedAt: Date | null;
     }>;
@@ -193,7 +193,7 @@ export declare const purchaseOrderService: {
         supplierId: string;
         orderNumber: string;
         requestedById: string;
-        status: import("@prisma/client").$Enums.POStatus;
+        status: import(".prisma/client").$Enums.POStatus;
         totalCost: number;
         receivedAt: Date | null;
     }>;
@@ -225,7 +225,7 @@ export declare const purchaseOrderService: {
         supplierId: string;
         orderNumber: string;
         requestedById: string;
-        status: import("@prisma/client").$Enums.POStatus;
+        status: import(".prisma/client").$Enums.POStatus;
         totalCost: number;
         receivedAt: Date | null;
     }>;

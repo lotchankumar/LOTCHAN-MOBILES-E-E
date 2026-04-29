@@ -29,11 +29,11 @@ export declare const orderService: {
         createdAt: Date;
         updatedAt: Date;
         orderNumber: string;
-        status: import("@prisma/client").$Enums.OrderStatus;
-        orderType: import("@prisma/client").$Enums.OrderType;
+        status: import(".prisma/client").$Enums.OrderStatus;
+        orderType: import(".prisma/client").$Enums.OrderType;
         totalAmount: number;
-        paymentMethod: import("@prisma/client").$Enums.PaymentMethod;
-        paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
+        paymentMethod: import(".prisma/client").$Enums.PaymentMethod;
+        paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
         customerId: string;
         staffId: string | null;
     }>;
