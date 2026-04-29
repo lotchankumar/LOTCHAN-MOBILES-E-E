@@ -46,7 +46,7 @@ router.patch('/products/:id', authenticate, requireRole(['ADMIN']), productContr
 router.delete('/products/:id', authenticate, requireRole(['ADMIN']), productController.deleteProduct);
 
 // Categories
-router.get('/categories', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req, res) => {
+router.get('/categories', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req: express.Request, res: express.Response) => {
   try {
     const categories = await inventoryService.getCategories();
     res.json({ success: true, data: categories });
@@ -54,7 +54,7 @@ router.get('/categories', authenticate, requireRole(['MANAGER', 'ADMIN']), async
     res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to fetch categories' });
   }
 });
-router.post('/categories', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req, res) => {
+router.post('/categories', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req: express.Request, res: express.Response) => {
   try {
     const category = await inventoryService.createCategory(req.body);
     res.status(201).json({ success: true, data: category });
@@ -64,7 +64,7 @@ router.post('/categories', authenticate, requireRole(['MANAGER', 'ADMIN']), asyn
 });
 
 // Manager Inventory (enhanced)
-router.get('/inventory', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req, res) => {
+router.get('/inventory', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req: express.Request, res: express.Response) => {
   try {
     const products = await inventoryService.getProducts({
       ...(req.query.category && { category: req.query.category as string }),
@@ -95,7 +95,7 @@ router.get('/inventory', authenticate, requireRole(['MANAGER', 'ADMIN']), async 
   }
 });
 
-router.get('/low-stock', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req, res) => {
+router.get('/low-stock', authenticate, requireRole(['MANAGER', 'ADMIN']), async (req: express.Request, res: express.Response) => {
   try {
     const products = await inventoryService.getLowStockProducts();
     const transformed = products.map((p: any) => ({
