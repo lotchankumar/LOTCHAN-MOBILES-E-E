@@ -61,7 +61,8 @@ async function main() {
   ];
 
   await prisma.branch.createMany({
-    data: branchesData
+    data: branchesData,
+    skipDuplicates: true,
   });
 
   const branches = await prisma.branch.findMany();
@@ -84,12 +85,13 @@ async function main() {
   ];
   await prisma.supplier.createMany({
     data: suppliersData,
+    skipDuplicates: true,
   });
   const suppliers = await prisma.supplier.findMany();
 
   // 3. Create Sample Products (now with supplierId)
   console.log('Creating products...');
-  const productsData = [
+  const productsData: any[] = [
     // Smartphones
     { sku: 'APP-IP15-128', name: 'iPhone 15 128GB - Midnight', category: 'MOBILE', brand: 'Apple', model: 'iPhone 15', price: 69900, cost: 62000, stockQty: 10, supplierId: suppliers[2].id },
     { sku: 'APP-IP15P-256', name: 'iPhone 15 Pro 256GB - Natural Titanium', category: 'MOBILE', brand: 'Apple', model: 'iPhone 15 Pro', price: 134900, cost: 121000, stockQty: 5, supplierId: suppliers[2].id },
@@ -104,27 +106,29 @@ async function main() {
     { sku: 'ACC-CBL-USBC', name: 'Braided Type-C to Type-C Cable', category: 'ACCESSORY', brand: 'Boat', price: 399, cost: 180, stockQty: 50, supplierId: suppliers[3].id },
     { sku: 'ACC-PB-10K', name: '10000mAh Power Bank', category: 'ACCESSORY', brand: 'Mi', price: 1299, cost: 850, stockQty: 15, supplierId: suppliers[3].id },
     // Repair Parts
-    { sku: 'PRT-IP12-SCR', name: 'iPhone 12 OLED Display Unit', category: 'Part', brand: 'Apple', model: 'iPhone 12', price: 12500, cost: 8000, stockQty: 3, supplierId: suppliers[2].id },
-    { sku: 'PRT-SAMA53-BAT', name: 'Samsung A53 Original Battery', category: 'Part', brand: 'Samsung', model: 'Galaxy A53', price: 2500, cost: 1400, stockQty: 5, supplierId: suppliers[0].id },
-    { sku: 'PRT-IP11-PORT', name: 'iPhone 11 Charging Port Flex', category: 'Part', brand: 'Apple', model: 'iPhone 11', price: 1800, cost: 800, stockQty: 8, supplierId: suppliers[2].id },
+    { sku: 'PRT-IP12-SCR', name: 'iPhone 12 OLED Display Unit', category: 'ACCESSORY', brand: 'Apple', model: 'iPhone 12', price: 12500, cost: 8000, stockQty: 3, supplierId: suppliers[2].id },
+    { sku: 'PRT-SAMA53-BAT', name: 'Samsung A53 Original Battery', category: 'ACCESSORY', brand: 'Samsung', model: 'Galaxy A53', price: 2500, cost: 1400, stockQty: 5, supplierId: suppliers[0].id },
+    { sku: 'PRT-IP11-PORT', name: 'iPhone 11 Charging Port Flex', category: 'ACCESSORY', brand: 'Apple', model: 'iPhone 11', price: 1800, cost: 800, stockQty: 8, supplierId: suppliers[2].id },
   ];
 
   await prisma.product.createMany({
     data: productsData,
+    skipDuplicates: true,
   });
 
   const products = await prisma.product.findMany();
 
   // 4. Create Sample Customers
   console.log('Creating customers...');
-  const customersData = [
-    { name: 'Arun Kumar', email: 'arun.k@gmail.com', phone: '9876543210', address: 'RS Puram, Coimbatore, Tamil Nadu' },
-    { name: 'Priya Rajan', email: 'priya.rajan88@yahoo.in', phone: '8765432109', address: 'Gandhipuram, Coimbatore, Tamil Nadu' },
-    { name: 'Karthik S', email: 'karthik.s@outlook.com', phone: '7654321098', address: 'Peelamedu, Coimbatore, Tamil Nadu' },
+  const customersData: any[] = [
+    { name: 'Arun Kumar', email: 'arun.k@gmail.com', phone: '9876543210', address: 'RS Puram, Coimbatore, Tamil Nadu', referralCode: 'ARUN123' },
+    { name: 'Priya Rajan', email: 'priya.rajan88@yahoo.in', phone: '8765432109', address: 'Gandhipuram, Coimbatore, Tamil Nadu', referralCode: 'PRIYA123' },
+    { name: 'Karthik S', email: 'karthik.s@outlook.com', phone: '7654321098', address: 'Peelamedu, Coimbatore, Tamil Nadu', referralCode: 'KARTHIK123' },
   ];
 
   await prisma.customer.createMany({
     data: customersData,
+    skipDuplicates: true,
   });
 
   const customers = await prisma.customer.findMany();
@@ -141,7 +145,7 @@ async function main() {
       paymentMethod: 'UPI',
       paymentStatus: 'PAID',
       staffId: staff.id,
-      items: {
+      orderItems: {
         create: [
           {
             productId: products.find(p => p.sku === 'APP-IP15-128')!.id,
@@ -163,11 +167,11 @@ async function main() {
       orderNumber: 'ORD-2026-0002',
       customerId: customers[1].id, // Priya Rajan
       orderType: 'ONLINE',
-      status: 'OUT_FOR_DELIVERY',
+      status: 'PROCESSING',
       totalAmount: 1299, // Power Bank
-      paymentMethod: 'ONLINE',
+      paymentMethod: 'CARD',
       paymentStatus: 'PAID',
-      items: {
+      orderItems: {
         create: [
           {
             productId: products.find(p => p.sku === 'ACC-PB-10K')!.id,
@@ -193,7 +197,7 @@ async function main() {
       estimatedCost: 13000,
       advancePaid: 5000,
       assignedToId: staff.id,
-      partsUsed: {
+      repairParts: {
         create: [
           {
             productId: products.find(p => p.sku === 'PRT-IP12-SCR')!.id,
@@ -212,12 +216,12 @@ async function main() {
       deviceModel: 'Samsung Galaxy A53',
       issueDescription: 'Battery not charging properly and draining fast',
       diagnosis: 'Battery degradation, requires new battery',
-      status: 'READY_FOR_PICKUP',
+      status: 'COMPLETED',
       estimatedCost: 2800,
       finalCost: 2800,
       advancePaid: 0,
       assignedToId: staff.id,
-      partsUsed: {
+      repairParts: {
         create: [
           {
             productId: products.find(p => p.sku === 'PRT-SAMA53-BAT')!.id,
