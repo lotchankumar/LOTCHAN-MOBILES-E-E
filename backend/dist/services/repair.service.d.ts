@@ -26,7 +26,7 @@ export declare const repairService: {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.RepairStatus;
+        status: import(".prisma/client").$Enums.RepairStatus;
         ticketNumber: string;
         customerId: string;
         deviceModel: string;
@@ -64,7 +64,7 @@ export declare const repairService: {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.RepairStatus;
+        status: import(".prisma/client").$Enums.RepairStatus;
         ticketNumber: string;
         customerId: string;
         deviceModel: string;

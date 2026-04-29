@@ -70,7 +70,7 @@ declare function adjustStock(productId: string, quantity: number, reason: string
     description: string | null;
     supplierId: string | null;
     sku: string;
-    category: import("@prisma/client").$Enums.Category;
+    category: import(".prisma/client").$Enums.Category;
     categoryId: string | null;
     brand: string;
     model: string | null;
@@ -97,7 +97,7 @@ declare function getLowStockProducts(): Promise<({
             description: string | null;
             supplierId: string | null;
             sku: string;
-            category: import("@prisma/client").$Enums.Category;
+            category: import(".prisma/client").$Enums.Category;
             categoryId: string | null;
             brand: string;
             model: string | null;
@@ -115,7 +115,7 @@ declare function getLowStockProducts(): Promise<({
             description: string | null;
             supplierId: string | null;
             sku: string;
-            category: import("@prisma/client").$Enums.Category;
+            category: import(".prisma/client").$Enums.Category;
             categoryId: string | null;
             brand: string;
             model: string | null;
@@ -133,7 +133,7 @@ declare function getLowStockProducts(): Promise<({
             description: string | null;
             supplierId: string | null;
             sku: string;
-            category: import("@prisma/client").$Enums.Category;
+            category: import(".prisma/client").$Enums.Category;
             categoryId: string | null;
             brand: string;
             model: string | null;
@@ -209,7 +209,7 @@ declare function getLowStockProducts(): Promise<({
     description: string | null;
     supplierId: string | null;
     sku: string;
-    category: import("@prisma/client").$Enums.Category;
+    category: import(".prisma/client").$Enums.Category;
     categoryId: string | null;
     brand: string;
     model: string | null;
@@ -270,7 +270,7 @@ declare function getProductById(id: string): Promise<{
     description: string | null;
     supplierId: string | null;
     sku: string;
-    category: import("@prisma/client").$Enums.Category;
+    category: import(".prisma/client").$Enums.Category;
     categoryId: string | null;
     brand: string;
     model: string | null;
@@ -289,7 +289,7 @@ declare function createProduct(data: CreateProductData): Promise<{
     description: string | null;
     supplierId: string | null;
     sku: string;
-    category: import("@prisma/client").$Enums.Category;
+    category: import(".prisma/client").$Enums.Category;
     categoryId: string | null;
     brand: string;
     model: string | null;
@@ -308,7 +308,7 @@ declare function updateProduct(id: string, data: UpdateProductData): Promise<{
     description: string | null;
     supplierId: string | null;
     sku: string;
-    category: import("@prisma/client").$Enums.Category;
+    category: import(".prisma/client").$Enums.Category;
     categoryId: string | null;
     brand: string;
     model: string | null;

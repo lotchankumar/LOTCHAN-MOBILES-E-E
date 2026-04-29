@@ -40,7 +40,7 @@ export declare const baseManagerService: {
         id: string;
         email: string;
         passwordHash: string;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
         branchId: string | null;
         managerId: string | null;
@@ -60,7 +60,7 @@ export declare const baseManagerService: {
         id: string;
         email: string;
         passwordHash: string;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
         branchId: string | null;
         managerId: string | null;
@@ -91,7 +91,7 @@ export declare const staffService: {
         id: string;
         email: string;
         passwordHash: string;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
         branchId: string | null;
         managerId: string | null;
@@ -111,7 +111,7 @@ export declare const staffService: {
         id: string;
         email: string;
         passwordHash: string;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
         branchId: string | null;
         managerId: string | null;
@@ -139,7 +139,7 @@ export declare const organizationService: {
                     id: string;
                     email: string;
                     passwordHash: string;
-                    role: import("@prisma/client").$Enums.Role;
+                    role: import(".prisma/client").$Enums.Role;
                     isActive: boolean;
                     branchId: string | null;
                     managerId: string | null;
@@ -150,7 +150,7 @@ export declare const organizationService: {
                 id: string;
                 email: string;
                 passwordHash: string;
-                role: import("@prisma/client").$Enums.Role;
+                role: import(".prisma/client").$Enums.Role;
                 isActive: boolean;
                 branchId: string | null;
                 managerId: string | null;
@@ -176,7 +176,7 @@ export declare const organizationService: {
             id: string;
             email: string;
             passwordHash: string;
-            role: import("@prisma/client").$Enums.Role;
+            role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
             branchId: string | null;
             managerId: string | null;
@@ -236,7 +236,7 @@ declare const managerService: {
         id: string;
         email: string;
         passwordHash: string;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
         branchId: string | null;
         managerId: string | null;
@@ -256,7 +256,7 @@ declare const managerService: {
         id: string;
         email: string;
         passwordHash: string;
-        role: import("@prisma/client").$Enums.Role;
+        role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
         branchId: string | null;
         managerId: string | null;

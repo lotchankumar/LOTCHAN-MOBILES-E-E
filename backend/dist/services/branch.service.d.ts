@@ -27,7 +27,7 @@ export declare const branchService: {
             id: string;
             email: string;
             passwordHash: string;
-            role: import("@prisma/client").$Enums.Role;
+            role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
             branchId: string | null;
             managerId: string | null;

@@ -34,14 +34,62 @@ exports.orderController = {
         try {
             const user = req.user;
             const isCustomer = user && user.role === 'CUSTOMER';
-            const whereClause = isCustomer
-                ? { customerId: user.id }
-                : user.role === 'MANAGER' && user.branchId
-                    ? { staff: { branchId: user.branchId } }
-                    : {};
+            // Role-based base filter
+            let roleWhere = {};
+            if (isCustomer) {
+                roleWhere = { customerId: user.id };
+            }
+            else if (user.role === 'MANAGER' && user.branchId) {
+                roleWhere = { staff: { branchId: user.branchId } };
+            }
+            // Parse query filters
+            const { dateFrom, dateTo, status, customerName, staffName, paymentMethod, minTotal, maxTotal, page = '0', limit = '50' } = req.query;
+            const skip = parseInt(page) * parseInt(limit);
+            const take = parseInt(limit);
+            const filterWhere = {};
+            // Date range
+            if (dateFrom) {
+                filterWhere.createdAt = { ...filterWhere.createdAt, gte: new Date(dateFrom) };
+            }
+            if (dateTo) {
+                filterWhere.createdAt = { ...filterWhere.createdAt, lte: new Date(dateTo + 'T23:59:59.999Z') };
+            }
+            // Status
+            if (status) {
+                filterWhere.status = { in: status.split(',') };
+            }
+            // Numeric total
+            if (minTotal) {
+                filterWhere.totalAmount = { ...filterWhere.totalAmount, gte: parseFloat(minTotal) };
+            }
+            if (maxTotal) {
+                filterWhere.totalAmount = { ...filterWhere.totalAmount, lte: parseFloat(maxTotal) };
+            }
+            // Payment method
+            if (paymentMethod) {
+                filterWhere.paymentMethod = paymentMethod;
+            }
+            // Search OR conditions
+            const searchOr = [];
+            if (customerName) {
+                searchOr.push({ customer: { name: { contains: customerName, mode: 'insensitive' } } });
+            }
+            if (staffName) {
+                searchOr.push({ staff: { name: { contains: staffName, mode: 'insensitive' } } });
+            }
+            // Combine
+            const whereClause = {
+                AND: [
+                    roleWhere,
+                    filterWhere,
+                    ...(searchOr.length > 0 ? [{ OR: searchOr }] : [])
+                ].filter(Boolean)
+            };
             const orders = await client_1.default.order.findMany({
                 where: whereClause,
                 orderBy: { createdAt: 'desc' },
+                skip,
+                take,
                 include: {
                     items: true,
                     customer: true,
@@ -50,9 +98,12 @@ exports.orderController = {
                     }
                 }
             });
-            res.json(orders);
+            // Get total count for pagination
+            const total = await client_1.default.order.count({ where: whereClause });
+            res.json({ data: orders, pagination: { page: parseInt(page), limit: take, total, pages: Math.ceil(total / take) } });
         }
         catch (error) {
+            console.error('Get orders error:', error);
             res.status(500).json({ error: 'Failed to fetch orders' });
         }
     },
