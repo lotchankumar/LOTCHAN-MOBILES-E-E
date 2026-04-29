@@ -22,7 +22,7 @@ export default defineConfig({
         "form-action 'self'",
         "frame-ancestors 'none'",
         "font-src 'self' https://r2cdn.perplexity.ai",
-        "connect-src 'self' http://localhost:5000",
+        "connect-src 'self' *",
         "style-src 'self' 'unsafe-inline'",
         "script-src 'self'",
         "img-src 'self' data: blob:",
