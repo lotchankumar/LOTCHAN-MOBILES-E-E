@@ -118,3 +118,108 @@ git push origin feature/my-cool-new-thing
 2. Click the button that says **"Compare & pull request"**.
 3. This is like asking the team: *"Hey, can someone check my work before we add it to the real app?"*
 4. Once your team says it looks great, they will "Merge" it into the main code! 🎉
+
+
+
+### 🧰 Fixing “Authentication failed against database server” (Prisma P1000)
+
+If you run:
+
+```bash
+npx prisma migrate dev
+```
+
+and see this error:
+
+> `Error: P1000: Authentication failed against database server at 'localhost', the provided database credentials for 'user' are not valid.`
+
+it means Prisma cannot log into your local PostgreSQL database because the username or password in your `.env` file is wrong. [github](https://github.com/lotchankumar/LOTCHAN-MOBILES-E-E/blob/main/DEVELOPER_GUIDE.md)
+
+Follow these steps to fix it:
+
+1. **Check your PostgreSQL user in pgAdmin**
+
+   - Open **pgAdmin**.  
+   - In the left side panel, expand:  
+     `Servers → PostgreSQL 18 → Databases → lotchan_mobiles`.  
+   - Right‑click **PostgreSQL 18** and click **Properties → Connection**.  
+   - Confirm these values:  
+     - Host: `localhost`  
+     - Port: `5432`  
+     - Username: `postgres` (this is the login user you must use in `.env`). [prisma](https://www.prisma.io/docs/postgres/database/connecting-to-your-database)
+
+2. **Set a password for the `postgres` user (if it has none)**
+
+   - In pgAdmin, expand `PostgreSQL 18 → Login/Group Roles`.  
+   - Right‑click **postgres → Properties → Definition**.  
+   - In the **Password** field, enter a strong password (example: `Lotchan_123!`) and save. [atlassian](https://www.atlassian.com/data/admin/how-to-set-the-default-user-password-in-postgresql)
+   - Leave “Account expires” empty and “Connection limit” as `-1` (no change needed).
+
+3. **Update your `.env` `DATABASE_URL`**
+
+   - Open the `backend/.env` file.  
+   - Find the line that starts with `DATABASE_URL`.  
+   - Change it to this format (all in one line):
+
+     ```env
+     DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/lotchan_mobiles?schema=public"
+     ```
+
+   - Replace `YOUR_PASSWORD` with the exact password you set for the `postgres` user in pgAdmin. [prisma](https://www.prisma.io/docs/orm/reference/connection-urls)
+   - Make sure:
+     - `postgres` = **username**  
+     - `lotchan_mobiles` = **database name**  
+     - Host = `localhost`, Port = `5432`.
+
+4. **Apply the Prisma migrations**
+
+   In a terminal inside the `backend` folder, run:
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+   If the username, password, and database name are correct, the P1000 error will disappear and Prisma will successfully create/update your local tables. [stackoverflow](https://stackoverflow.com/questions/63684133/prisma-cant-connect-to-postgresql)
+
+> ✅ **Quick recap:**  
+> - Username is `postgres` (from pgAdmin Connection tab), **not** `lotchan_mobiles`.  
+> - `lotchan_mobiles` is the database name.  
+> - You must set a password for `postgres` and reuse it in `DATABASE_URL`.
+
+## Git Identity and Branch Publishing (VS Code)
+
+### Fixing "Author identity unknown"
+
+The `Author identity unknown` error occurs when Git does not know who is making the commit. This happens because `user.name` and `user.email` are not configured on your local machine—it is not caused by branch protection rules.
+
+To fix this, you must configure your Git identity. **Ensure that the email you configure matches your GitHub email** so that your commits are correctly attributed to your GitHub profile.
+
+**Global identity** (Applies to all repositories on your machine):
+```bash
+git config --global user.name "Your Real Name"
+git config --global user.email "your-email@example.com"
+```
+
+**Repo-only identity** (Applies only to the current repository):
+```bash
+git config user.name "Your Real Name"
+git config user.email "your-email@example.com"
+```
+
+> **Note:** A commit will fail with "Author identity unknown" until `user.name` and `user.email` are set. Publishing a branch should only be done after your local commits are working successfully.
+
+### Publishing Branches from VS Code
+
+When you create a new feature branch locally, it does not automatically exist on GitHub. 
+
+* **Publish:** Used when the branch exists only locally. Clicking "Publish Branch" pushes the new local branch to GitHub for the first time and sets up the upstream tracking branch.
+* **Push:** Used after a branch has already been published. It simply sends your new commits to the existing remote branch.
+
+### Step-by-step flow for contributors:
+
+* Pull the latest changes from `origin/main` (or the default branch) and create a new feature branch (e.g., `feature/db-guide-fix`) in VS Code.
+* Make your changes and save the files.
+* Stage your changes (Source Control → **+** or run `git add .` in the terminal).
+* Commit your changes with a clear commit message.
+* If this is the first time for that branch, click **Publish Branch** in the VS Code Source Control panel to push it to GitHub.
+* After that, just use **Push** / `git push` for future commits on the same branch.
