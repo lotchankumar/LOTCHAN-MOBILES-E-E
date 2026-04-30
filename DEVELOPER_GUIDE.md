@@ -219,4 +219,4 @@ When you create a new feature branch locally, it does not automatically exist on
 * Stage your changes (Source Control → **+** or run `git add .` in the terminal).
 * Commit your changes with a clear commit message.
 * If this is the first time for that branch, click **Publish Branch** in the VS Code Source Control panel to push it to GitHub.
-* After that, just use **Push** / `git push` for future commits on the same branch.
+* After that, just use **Push** / `git push` for future commits on the same branch.
