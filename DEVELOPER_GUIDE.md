@@ -182,3 +182,41 @@ Follow these steps to fix it:
 > - Username is `postgres` (from pgAdmin Connection tab), **not** `lotchan_mobiles`.  
 > - `lotchan_mobiles` is the database name.  
 > - You must set a password for `postgres` and reuse it in `DATABASE_URL`.
+
+## Git Identity and Branch Publishing (VS Code)
+
+### Fixing "Author identity unknown"
+
+The `Author identity unknown` error occurs when Git does not know who is making the commit. This happens because `user.name` and `user.email` are not configured on your local machine—it is not caused by branch protection rules.
+
+To fix this, you must configure your Git identity. **Ensure that the email you configure matches your GitHub email** so that your commits are correctly attributed to your GitHub profile.
+
+**Global identity** (Applies to all repositories on your machine):
+```bash
+git config --global user.name "Your Real Name"
+git config --global user.email "your-email@example.com"
+```
+
+**Repo-only identity** (Applies only to the current repository):
+```bash
+git config user.name "Your Real Name"
+git config user.email "your-email@example.com"
+```
+
+> **Note:** A commit will fail with "Author identity unknown" until `user.name` and `user.email` are set. Publishing a branch should only be done after your local commits are working successfully.
+
+### Publishing Branches from VS Code
+
+When you create a new feature branch locally, it does not automatically exist on GitHub. 
+
+* **Publish:** Used when the branch exists only locally. Clicking "Publish Branch" pushes the new local branch to GitHub for the first time and sets up the upstream tracking branch.
+* **Push:** Used after a branch has already been published. It simply sends your new commits to the existing remote branch.
+
+### Step-by-step flow for contributors:
+
+* Pull the latest changes from `origin/main` (or the default branch) and create a new feature branch (e.g., `feature/db-guide-fix`) in VS Code.
+* Make your changes and save the files.
+* Stage your changes (Source Control → **+** or run `git add .` in the terminal).
+* Commit your changes with a clear commit message.
+* If this is the first time for that branch, click **Publish Branch** in the VS Code Source Control panel to push it to GitHub.
+* After that, just use **Push** / `git push` for future commits on the same branch.
