@@ -223,3 +223,21 @@ When you create a new feature branch locally, it does not automatically exist on
 * Commit your changes with a clear commit message.
 * If this is the first time for that branch, click **Publish Branch** in the VS Code Source Control panel to push it to GitHub.
 * After that, just use **Push** / `git push` for future commits on the same branch.
+
+## Common Git Issues & Solutions
+
+### 1. `git pull` fails because the local branch is tracking the wrong remote branch
+**Problem:** You try to run `git pull` on the `dev` branch, but you get an error or it says it's tracking someone else's branch (like `origin/lotchan`).
+**Solution:** Tell Git exactly which remote branch your local branch should sync with by running:
+```bash
+git branch --set-upstream-to=origin/dev dev
+```
+Then, try your `git pull` again.
+
+### 2. Stuck in Vim with a `.MERGE_MSG.swp` swap file warning during a `git pull`
+**Problem:** You run `git pull` to fetch team members' code, and it opens a text editor with a warning about a `.MERGE_MSG.swp` file ("Swap file already exists!"). This happens if a previous merge crashed or the terminal was closed abruptly while creating a commit.
+**Solution:**
+1. At the prompt, type **`D`** and press **Enter** to delete the old, unneeded swap file.
+2. The editor will now open normally showing a default merge message.
+3. *If you accidentally typed things and see `recording @q` or `-- INSERT --` at the bottom, press `Escape` (Esc) a few times to return to Normal mode.*
+4. To accept the message and exit, type **`:wq`** and press **Enter** to save and quit. Your `git pull` will finish!
