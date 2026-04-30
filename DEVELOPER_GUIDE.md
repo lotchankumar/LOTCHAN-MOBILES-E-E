@@ -82,18 +82,21 @@ Now you can log into your local app using any of these fake accounts!
 
 ## 🛠️ Part 4: How to Add New Code (The "Git" Workflow)
 
-When multiple people work on the same code, we don't want to step on each other's toes or break the main working code (which we call the `main` branch).
+When multiple people work on the same code, we don't want to step on each other's toes or break the working code.
+
+> **⚠️ IMPORTANT RULE:**
+> **Always open Pull Requests against the `dev` branch.**
+> The `main` branch is protected and used strictly for production-ready releases. Please ensure your changes are targeted at `dev` to be reviewed and merged.
 
 Here is the safe way to add your work:
 
 ### Step 1: Make a "Copy" of the Code
-Never work directly on the `main` code. Create your own safe branch (copy) to work on:
+Never work directly on the `dev` or `main` code. Create your own safe branch (copy) to work on:
 ```bash
-git checkout main
-git pull origin main
+git checkout dev
+git pull origin dev
 git checkout -b feature/my-cool-new-thing
 ```
-
 ### Step 2: Write Your Code and Test It
 Make your changes! Start the backend and the frontend to make sure everything looks good and doesn't crash.
 
