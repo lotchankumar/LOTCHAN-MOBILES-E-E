@@ -115,3 +115,70 @@ git push origin feature/my-cool-new-thing
 2. Click the button that says **"Compare & pull request"**.
 3. This is like asking the team: *"Hey, can someone check my work before we add it to the real app?"*
 4. Once your team says it looks great, they will "Merge" it into the main code! 🎉
+
+
+
+### 🧰 Fixing “Authentication failed against database server” (Prisma P1000)
+
+If you run:
+
+```bash
+npx prisma migrate dev
+```
+
+and see this error:
+
+> `Error: P1000: Authentication failed against database server at 'localhost', the provided database credentials for 'user' are not valid.`
+
+it means Prisma cannot log into your local PostgreSQL database because the username or password in your `.env` file is wrong. [github](https://github.com/lotchankumar/LOTCHAN-MOBILES-E-E/blob/main/DEVELOPER_GUIDE.md)
+
+Follow these steps to fix it:
+
+1. **Check your PostgreSQL user in pgAdmin**
+
+   - Open **pgAdmin**.  
+   - In the left side panel, expand:  
+     `Servers → PostgreSQL 18 → Databases → lotchan_mobiles`.  
+   - Right‑click **PostgreSQL 18** and click **Properties → Connection**.  
+   - Confirm these values:  
+     - Host: `localhost`  
+     - Port: `5432`  
+     - Username: `postgres` (this is the login user you must use in `.env`). [prisma](https://www.prisma.io/docs/postgres/database/connecting-to-your-database)
+
+2. **Set a password for the `postgres` user (if it has none)**
+
+   - In pgAdmin, expand `PostgreSQL 18 → Login/Group Roles`.  
+   - Right‑click **postgres → Properties → Definition**.  
+   - In the **Password** field, enter a strong password (example: `Lotchan_123!`) and save. [atlassian](https://www.atlassian.com/data/admin/how-to-set-the-default-user-password-in-postgresql)
+   - Leave “Account expires” empty and “Connection limit” as `-1` (no change needed).
+
+3. **Update your `.env` `DATABASE_URL`**
+
+   - Open the `backend/.env` file.  
+   - Find the line that starts with `DATABASE_URL`.  
+   - Change it to this format (all in one line):
+
+     ```env
+     DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/lotchan_mobiles?schema=public"
+     ```
+
+   - Replace `YOUR_PASSWORD` with the exact password you set for the `postgres` user in pgAdmin. [prisma](https://www.prisma.io/docs/orm/reference/connection-urls)
+   - Make sure:
+     - `postgres` = **username**  
+     - `lotchan_mobiles` = **database name**  
+     - Host = `localhost`, Port = `5432`.
+
+4. **Apply the Prisma migrations**
+
+   In a terminal inside the `backend` folder, run:
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+   If the username, password, and database name are correct, the P1000 error will disappear and Prisma will successfully create/update your local tables. [stackoverflow](https://stackoverflow.com/questions/63684133/prisma-cant-connect-to-postgresql)
+
+> ✅ **Quick recap:**  
+> - Username is `postgres` (from pgAdmin Connection tab), **not** `lotchan_mobiles`.  
+> - `lotchan_mobiles` is the database name.  
+> - You must set a password for `postgres` and reuse it in `DATABASE_URL`.
