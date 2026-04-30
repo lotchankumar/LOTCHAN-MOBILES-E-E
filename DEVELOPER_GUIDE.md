@@ -241,3 +241,20 @@ Then, try your `git pull` again.
 2. The editor will now open normally showing a default merge message.
 3. *If you accidentally typed things and see `recording @q` or `-- INSERT --` at the bottom, press `Escape` (Esc) a few times to return to Normal mode.*
 4. To accept the message and exit, type **`:wq`** and press **Enter** to save and quit. Your `git pull` will finish!
+
+### 3. Accidentally branched from `main` instead of `dev`
+**Problem:** You created a new feature branch (e.g., `mathu`) from the `main` branch, but you were supposed to branch off `dev`. You want to move your branch to be based on `dev` instead.
+**Solution:** You can "rebase" your branch onto `dev`. This updates your branch to start from the latest commits in `dev`.
+1. Make sure you are on your feature branch (e.g., `mathu`).
+2. Fetch the latest changes from the main remote:
+   ```bash
+   git fetch upstream
+   ```
+3. Rebase your current branch onto the upstream `dev` branch:
+   ```bash
+   git rebase upstream/dev
+   ```
+4. If you have already pushed your branch to your personal fork (`origin`), you must "force push" to tell GitHub about this rewritten history:
+   ```bash
+   git push -f origin mathu
+   ```
