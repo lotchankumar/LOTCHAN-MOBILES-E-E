@@ -15,7 +15,7 @@ model User {
   name         String
   email        String   @unique
   passwordHash String
-  role         Role         @default(STAFF)
+  role         Role     @default(STAFF)
   isActive     Boolean  @default(true)
   branchId     String?
   managerId    String?
@@ -26,13 +26,14 @@ model User {
   managedStaff User[]  @relation("ManagedStaff")
 
   // Relations
-  orders     Order[]
-  repairJobs RepairJob[] @relation("AssignedTo")
-  purchases  Purchase[]
-  expenses   Expense[]
-  purchaseOrders     PurchaseOrder[] @relation("RequestedBy")
-  stockMovements     StockMovement[] @relation("MovementUser")
+  orders               Order[]
+  repairJobs           RepairJob[]           @relation("AssignedTo")
+  purchases            Purchase[]
+  expenses             Expense[]
+  purchaseOrders       PurchaseOrder[]       @relation("RequestedBy")
+  stockMovements       StockMovement[]       @relation("MovementUser")
   repairSparePurchases RepairSparePurchase[]
+  deviceTokens         DeviceToken[]
 
   @@map("users")
 }
@@ -52,33 +53,35 @@ model Branch {
 }
 
 model Product {
-  id          String  @id @default(cuid())
-  sku         String  @unique
-  name        String
-  description String?
-  category    Category
-  categoryId  String?
-  supplierId  String?
-  brand       String
-  model       String?
-  price       Float
-  cost        Float
-  stockQty    Int     @default(0)
-  minStock    Int     @default(5)
-  imageUrl    String?
-  isAvailable Boolean @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  sku               String   @unique
+  name              String
+  description       String?
+  category          Category
+  categoryId        String?
+  supplierId        String?
+  brand             String
+  model             String?
+  price             Float
+  cost              Float
+  stockQty          Int      @default(0)
+  minStock          Int      @default(5)
+  imageUrl          String?
+  isAvailable       Boolean  @default(true)
+  showInPosApp      Boolean  @default(true)
+  showInCustomerApp Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   categoryType ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  supplier     Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplier     Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   // Relations
-  orderItems  OrderItem[]
-  repairParts RepairPart[]
-  purchaseItems PurchaseItem[]
+  orderItems         OrderItem[]
+  repairParts        RepairPart[]
+  purchaseItems      PurchaseItem[]
   purchaseOrderItems PurchaseOrderItem[]
-  stockMovements StockMovement[]
+  stockMovements     StockMovement[]
 
   @@index([categoryId])
   @@index([supplierId])
@@ -98,11 +101,11 @@ model Supplier {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  products              Product[]
-  purchaseOrders        PurchaseOrder[]
-  repairSpareProducts   RepairSpareProduct[]
-  payments              SupplierPayment[]
-  purchases             Purchase[]          @relation("SupplierPurchases")
+  products            Product[]
+  purchaseOrders      PurchaseOrder[]
+  repairSpareProducts RepairSpareProduct[]
+  payments            SupplierPayment[]
+  purchases           Purchase[]           @relation("SupplierPurchases")
 
   @@map("suppliers")
 }
@@ -111,8 +114,8 @@ model SupplierPayment {
   id          String   @id @default(cuid())
   supplierId  String
   amount      Float
-  paymentType String          // CREDIT or DEBIT (credit = supplier gives us stuff, debit = we pay supplier)
-  reference   String?         // e.g. purchase invoice no, payment ref
+  paymentType String // CREDIT or DEBIT (credit = supplier gives us stuff, debit = we pay supplier)
+  reference   String? // e.g. purchase invoice no, payment ref
   description String?
   paymentDate DateTime @default(now())
   createdAt   DateTime @default(now())
@@ -123,32 +126,32 @@ model SupplierPayment {
 }
 
 model ProductCategory {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
-  icon        String?
-  displayOrder Int     @default(0)
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  icon         String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
 
-  products          Product[]
+  products            Product[]
   repairSpareProducts RepairSpareProduct[]
 
   @@map("product_categories")
 }
 
 model Order {
-  id           String   @id @default(cuid())
-  orderNumber  String   @unique
-  customerId   String
-  orderType    OrderType
-  status       OrderStatus   @default(PENDING)
-  totalAmount  Float
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  customerId    String
+  orderType     OrderType
+  status        OrderStatus   @default(PENDING)
+  totalAmount   Float
   paymentMethod PaymentMethod
   paymentStatus PaymentStatus @default(PENDING)
-  staffId      String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  staffId       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
   staff    User?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
@@ -179,29 +182,30 @@ model Customer {
   phone         String   @unique
   address       String?
   passwordHash  String?
-  walletBalance Float     @default(0)
+  walletBalance Float    @default(0)
   referralCode  String   @unique
   referredById  String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  referredBy Customer? @relation("Referral", fields: [referredById], references: [id], onDelete: SetNull)
+  referredBy Customer?  @relation("Referral", fields: [referredById], references: [id], onDelete: SetNull)
   referrals  Customer[] @relation("Referral")
 
   // Relations
-  orders       Order[]
-  repairJobs   RepairJob[]
+  orders             Order[]
+  repairJobs         RepairJob[]
   walletTransactions WalletTransaction[]
   communityPosts     CommunityPost[]
   communityComments  CommunityComment[]
   chatMessages       ChatMessage[]
+  deviceTokens       DeviceToken[]
 
   @@map("customers")
 }
 
 model RepairJob {
-  id               String   @id @default(cuid())
-  ticketNumber     String   @unique
+  id               String       @id @default(cuid())
+  ticketNumber     String       @unique
   customerId       String
   repairCategoryId String?
   deviceModel      String
@@ -210,13 +214,13 @@ model RepairJob {
   diagnosis        String?
   location         String?
   scheduledDate    DateTime?
-  status           RepairStatus   @default(RECEIVED)
+  status           RepairStatus @default(RECEIVED)
   estimatedCost    Float?
   finalCost        Float?
-  advancePaid      Float     @default(0)
+  advancePaid      Float        @default(0)
   assignedToId     String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
   completedAt      DateTime?
 
   customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
@@ -243,13 +247,13 @@ model RepairPart {
 }
 
 model RepairCategory {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  icon        String?
-  basePrice   Float?
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  icon          String?
+  basePrice     Float?
   estimatedTime String?
-  createdAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
 
   repairJobs RepairJob[]
 
@@ -268,9 +272,9 @@ model Purchase {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  manager  User      @relation(fields: [managerId], references: [id], onDelete: Restrict)
-  supplierRef Supplier? @relation("SupplierPurchases", fields: [supplierId], references: [id], onDelete: SetNull)
-  items    PurchaseItem[]
+  manager     User           @relation(fields: [managerId], references: [id], onDelete: Restrict)
+  supplierRef Supplier?      @relation("SupplierPurchases", fields: [supplierId], references: [id], onDelete: SetNull)
+  items       PurchaseItem[]
 
   @@map("purchases")
 }
@@ -295,23 +299,23 @@ model PurchaseItem {
 // =============================================================
 
 model PurchaseOrder {
-  id             String     @id @default(cuid())
-  orderNumber    String     @unique
-  supplierId     String
-  requestedById  String
-  branchId       String?
-  status         POStatus   @default(DRAFT)
-  totalCost      Float       @default(0)
-  notes          String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  receivedAt     DateTime?
+  id            String    @id @default(cuid())
+  orderNumber   String    @unique
+  supplierId    String
+  requestedById String
+  branchId      String?
+  status        POStatus  @default(DRAFT)
+  totalCost     Float     @default(0)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  receivedAt    DateTime?
 
-  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  requestedBy   User     @relation("RequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
-  branch        Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  requestedBy User     @relation("RequestedBy", fields: [requestedById], references: [id], onDelete: Restrict)
+  branch      Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
-  items         PurchaseOrderItem[]
+  items          PurchaseOrderItem[]
   stockMovements StockMovement[]
 
   @@index([supplierId])
@@ -321,11 +325,11 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id              String  @id @default(cuid())
+  id              String @id @default(cuid())
   purchaseOrderId String
   productId       String
   quantity        Int
-  receivedQty     Int      @default(0)
+  receivedQty     Int    @default(0)
   unitCost        Float
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
@@ -339,16 +343,16 @@ model PurchaseOrderItem {
 model StockMovement {
   id              String       @id @default(cuid())
   productId       String
-  quantity        Int          // positive for in, negative for out
+  quantity        Int // positive for in, negative for out
   type            MovementType
-  reference       String?      // e.g. order id, repair id, PO id, manual reason
+  reference       String? // e.g. order id, repair id, PO id, manual reason
   purchaseOrderId String?
   userId          String?
   createdAt       DateTime     @default(now())
 
-  product       Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
   purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
-  user          User?         @relation("MovementUser", fields: [userId], references: [id], onDelete: SetNull)
+  user          User?          @relation("MovementUser", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([productId])
   @@index([type])
@@ -370,29 +374,40 @@ model Expense {
   @@map("expenses")
 }
 
-
-
 model Banner {
-  id           String  @id @default(cuid())
+  id           String   @id @default(cuid())
   title        String
   imageUrl     String
   linkUrl      String?
-  isActive     Boolean @default(true)
-  displayOrder Int     @default(0)
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
   createdAt    DateTime @default(now())
+  appType      AppType  @default(BOTH)
 
   @@map("banners")
 }
 
+model AppSetting {
+  id          String   @id @default(cuid())
+  appType     AppType
+  key         String
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([appType, key])
+  @@map("app_settings")
+}
+
 model WalletTransaction {
-  id            String   @id @default(cuid())
-  userId        String
-  amount        Float
+  id              String   @id @default(cuid())
+  userId          String
+  amount          Float
   transactionType String
-  description   String?
-  referenceId   String?
-  referenceType String?
-  createdAt     DateTime @default(now())
+  description     String?
+  referenceId     String?
+  referenceType   String?
+  createdAt       DateTime @default(now())
 
   user Customer @relation(fields: [userId], references: [id], onDelete: Restrict)
 
@@ -400,15 +415,15 @@ model WalletTransaction {
 }
 
 model CommunityPost {
-  id       String   @id @default(cuid())
-  userId   String
-  title    String
-  content  String
-  imageUrls String?
-  postType String?
-  likesCount Int    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  content    String
+  imageUrls  String?
+  postType   String?
+  likesCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   user Customer @relation(fields: [userId], references: [id], onDelete: Restrict)
 
@@ -419,23 +434,23 @@ model CommunityPost {
 }
 
 model CommunityComment {
-  id       String   @id @default(cuid())
-  postId   String
-  userId   String
-  content  String
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
   createdAt DateTime @default(now())
 
   post CommunityPost @relation(fields: [postId], references: [id], onDelete: Restrict)
-  user Customer     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user Customer      @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@map("community_comments")
 }
 
 model ChatMessage {
-  id       String   @id @default(cuid())
-  userId   String
-  message  String
-  isUser   Boolean  @default(true)
+  id        String   @id @default(cuid())
+  userId    String
+  message   String
+  isUser    Boolean  @default(true)
   createdAt DateTime @default(now())
 
   user Customer @relation(fields: [userId], references: [id], onDelete: Restrict)
@@ -531,7 +546,7 @@ model RepairSpareProduct {
   updatedAt         DateTime @updatedAt
 
   categoryType ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  supplier     Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplier     Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   purchaseItems RepairSparePurchaseItem[]
 
@@ -551,20 +566,20 @@ model RepairSparePurchase {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  manager User @relation(fields: [managerId], references: [id], onDelete: Restrict)
+  manager User                      @relation(fields: [managerId], references: [id], onDelete: Restrict)
   items   RepairSparePurchaseItem[]
 
   @@map("repair_spare_purchases")
 }
 
 model RepairSparePurchaseItem {
-  id            String @id @default(cuid())
-  purchaseId    String
+  id             String @id @default(cuid())
+  purchaseId     String
   spareProductId String
-  quantity      Int
-  unitCost      Float
-  sellingPrice  Float  @default(0)
-  total         Float
+  quantity       Int
+  unitCost       Float
+  sellingPrice   Float  @default(0)
+  total          Float
 
   purchase     RepairSparePurchase @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
   spareProduct RepairSpareProduct  @relation(fields: [spareProductId], references: [id], onDelete: Restrict)
@@ -578,4 +593,27 @@ enum MovementType {
   PURCHASE_RECEIVE
   MANUAL_ADJUSTMENT
   RETURN
+}
+
+enum AppType {
+  POS
+  CUSTOMER
+  BOTH
+}
+
+model DeviceToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  deviceType String
+  appType    AppType
+  userId     String?
+  customerId String?
+  createdAt  DateTime @default(now())
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([customerId])
+  @@map("device_tokens")
 }

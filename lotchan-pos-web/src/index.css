@@ -1,0 +1,204 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Lotchan Repair Center Design System */
+
+@layer base {
+  :root {
+    /* Single Mode Glassmorphism Theme */
+    --background: 210 61% 81%;
+    --foreground: 214 52% 24%; /* Dark Slate Blue */
+
+    /* Card & Surface */
+    --card: 0 0% 100%;
+    --card-foreground: 214 52% 24%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 214 52% 24%;
+
+    /* Primary - Dark Blue */
+    --primary: 215 72% 14%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 215 72% 24%;
+    --primary-dark: 215 72% 8%;
+
+    /* Secondary */
+    --secondary: 210 61% 70%;
+    --secondary-foreground: 215 72% 14%;
+
+    /* Accent */
+    --accent: 215 72% 14%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 215 72% 24%;
+    --accent-dark: 215 72% 8%;
+
+    /* Muted */
+    --muted: 210 61% 75%;
+    --muted-foreground: 215 72% 30%;
+
+    /* Success */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 0%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 210 61% 70%;
+    --input: 210 61% 70%;
+    --ring: 215 72% 14%;
+
+    /* Radius */
+    --radius: 0.875rem;
+
+    /* Shadows */
+    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-strong: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+    /* Animations */
+    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    /* Identical to :root, enforcing single mode */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply text-foreground;
+    background-image: url('/bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .dark body {
+    /* Same background to enforce single mode */
+    background-image: url('/bg.png');
+  }
+
+  h1 {
+    @apply text-4xl font-bold;
+  }
+  
+  h2 {
+    @apply text-2xl font-semibold;
+  }
+  
+  h3 {
+    @apply text-xl font-medium text-foreground/80;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply relative overflow-hidden px-4 py-2 text-white font-medium focus:outline-none transition-all duration-300;
+    border-radius: 4px; /* Rectangular shape per user request */
+    background: var(--primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #11315e; /* Slightly lighter on hover */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  }
+  .btn-primary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-secondary text-secondary-foreground font-medium rounded-2xl hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors;
+  }
+  
+  .input-field {
+    @apply w-full px-3 py-2 border border-input bg-background rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors;
+  }
+  
+  /* Hide number input spin buttons to prevent accidental scroll changes */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+  
+  .card {
+    @apply text-card-foreground p-6 transition-all;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  }
+  
+  .dark .card {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  }
+
+  .logo-halo {
+    filter: drop-shadow(0 0 15px rgba(10, 31, 61, 0.4));
+  }
+  
+  .dark .logo-halo {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+  }
+
+  /* Status Badges */
+  .status-requested {
+    @apply bg-warning/20 text-warning-foreground border border-warning/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-progress {
+    @apply bg-primary/20 text-primary-dark border border-primary/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-completed {
+    @apply bg-success/20 text-success border border-success/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-delivered {
+    @apply bg-accent/20 text-accent-dark border border-accent/30 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  /* Logo Truck Drive-In Animation */
+  .logo-drive-in {
+    animation: truckDriveIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes truckDriveIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-120vw) rotate(-5deg);
+    }
+    60% {
+      opacity: 1;
+      transform: translateX(10px) rotate(1deg);
+    }
+    80% {
+      transform: translateX(-5px) rotate(-0.5deg);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) rotate(0deg);
+    }
+  }
+}

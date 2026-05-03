@@ -24,11 +24,21 @@ cd backend
 npm install
 ```
 
-### Step 3: Install Frontend Tools (The "Face" of the App)
-The frontend is what the user sees on their screen. Open a *new* Terminal window, go to the project folder, and run:
+### Step 3: Install Frontend Tools (The "Website Face" of the App)
+The frontend is the website version of our app that runs in a web browser. Open a *new* Terminal window, go to the project folder, and run:
 ```bash
-cd pos-dashboard
+cd lotchan-pos-web
 npm install
+```
+
+### Step 4: Install Mobile App Tools (The "Phone Face" of the App)
+We also have a brand new mobile app for our staff! To work on this, you need to have **Flutter** installed on your computer.
+You will also need **Android Studio** installed to test the app on an Android emulator or a physical device.
+
+Open a *new* Terminal window, go to the project folder, and run:
+```bash
+cd lotchan_pos_mobile
+flutter pub get
 ```
 
 ---

@@ -58,14 +58,13 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50">
+    <div className="min-h-screen bg-transparent">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white/20 backdrop-blur-md shadow-sm border-b border-white/30">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-primary">LOTCHAN</h1>
-              <p className="text-sm text-muted-foreground">Mobile Repair Center</p>
+            <div className="flex items-center">
+              <img src="/logo.png" alt="Lotchan Mobiles Logo" className="h-10 w-auto object-contain relative z-10 logo-drive-in" />
             </div>
             <div className="flex items-center gap-3">
               <Bell className="h-6 w-6 text-muted-foreground" />
@@ -88,8 +87,8 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
       {/* Main Content */}
       <div className="px-4 py-6 space-y-6">
         {/* Welcome Section */}
-        <Card className="p-6 bg-gradient-to-r from-primary to-primary-light text-white">
-          <h2 className="text-lg font-semibold mb-2">Welcome Back!</h2>
+        <Card className="p-6 bg-white/30 backdrop-blur-md text-foreground border-white/40 shadow-lg">
+          <h2 className="text-xl font-bold mb-2">Welcome Back!</h2>
           <p className="text-sm opacity-90">Your trusted mobile repair partner</p>
           <div className="mt-4 flex items-center gap-4">
             <div className="text-center">
@@ -131,13 +130,13 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
                 <button
                   key={index}
                   onClick={service.action}
-                  className={service.className}
+                  className={`${service.className} border-white/40`}
                 >
-                  <Icon className="h-8 w-8 text-white mb-3" />
-                  <h4 className="font-semibold text-white text-sm mb-1">
+                  <Icon className="h-8 w-8 text-primary mb-3 drop-shadow-sm" />
+                  <h4 className="font-bold text-foreground text-sm mb-1">
                     {service.title}
                   </h4>
-                  <p className="text-xs text-white/80">{service.subtitle}</p>
+                  <p className="text-xs text-foreground/80 font-medium">{service.subtitle}</p>
                 </button>
               );
             })}
@@ -175,7 +174,7 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-border px-4 py-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/30 backdrop-blur-md border-t border-white/40 px-4 py-2">
         <div className="flex justify-around">
           {[
             { key: "home", icon: "🏠", label: "Home", action: () => {} },
