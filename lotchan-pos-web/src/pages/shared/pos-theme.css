@@ -1,0 +1,466 @@
+/* ===================================================
+   LOTCHAN MOBILES — Shared POS Dark Navy Theme
+   Used by Staff, Manager, and Technician portals
+   Scoped to .pos-theme wrapper
+   =================================================== */
+
+.pos-theme {
+  --pos-bg: #071A2F;
+  --pos-surface: #001429;
+  --pos-surface-container: #00213d;
+  --pos-surface-container-low: #001c37;
+  --pos-surface-container-high: #0c2b49;
+  --pos-surface-container-highest: #1a3654;
+  --pos-surface-bright: #1f3b59;
+  --pos-on-surface: #d2e4ff;
+  --pos-on-surface-variant: #c4c6cf;
+  --pos-primary: #aec8f0;
+  --pos-primary-container: #0b2a4a;
+  --pos-secondary: #a1c9ff;
+  --pos-secondary-container: #11487a;
+  --pos-tertiary: #a0c9ff;
+  --pos-tertiary-container: #002a4d;
+  --pos-error: #ffb4ab;
+  --pos-error-container: #93000a;
+  --pos-outline: #8d9198;
+  --pos-outline-variant: #43474e;
+  --pos-blue-accent: #3AA0FF;
+  --pos-blue-600: #2563eb;
+
+  background-color: var(--pos-bg);
+  color: var(--pos-on-surface);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+}
+
+/* ===== Glass Panels ===== */
+.pos-theme .pos-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pos-theme .pos-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+/* ===== Top Navbar ===== */
+.pos-theme .pos-topnav {
+  background: rgba(7, 26, 47, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Side Navbar ===== */
+.pos-theme .pos-sidenav {
+  background: rgba(7, 26, 47, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 2px 0 20px rgba(0, 40, 100, 0.2);
+}
+
+.pos-theme .pos-nav-active {
+  background: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+  border-left: 4px solid #3b82f6;
+}
+
+.pos-theme .pos-nav-link {
+  color: #64748b;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+.pos-theme .pos-nav-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+}
+
+/* ===== Buttons ===== */
+.pos-theme .pos-btn-primary {
+  background: linear-gradient(135deg, #3AA0FF 0%, #002a4d 100%);
+  color: white;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(58, 160, 255, 0.3);
+  transition: all 0.2s ease;
+}
+.pos-theme .pos-btn-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(58, 160, 255, 0.45);
+}
+.pos-theme .pos-btn-primary:active {
+  transform: scale(0.97);
+}
+.pos-theme .pos-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pos-theme .pos-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--pos-on-surface);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pos-theme .pos-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pos-theme .pos-btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pos-theme .pos-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* ===== Form Inputs ===== */
+.pos-theme .pos-input {
+  background: var(--pos-surface);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--pos-on-surface);
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  width: 100%;
+  transition: border-color 0.2s ease;
+  outline: none;
+}
+.pos-theme .pos-input:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+.pos-theme .pos-input::placeholder {
+  color: #64748b;
+}
+
+.pos-theme .pos-select {
+  background: var(--pos-surface);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--pos-on-surface);
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  width: 100%;
+  transition: border-color 0.2s ease;
+  outline: none;
+  appearance: none;
+}
+.pos-theme .pos-select:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+.pos-theme .pos-select option {
+  background: var(--pos-surface-container);
+  color: var(--pos-on-surface);
+}
+
+.pos-theme .pos-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.375rem;
+}
+
+/* ===== Tables ===== */
+.pos-theme .pos-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.pos-theme .pos-table thead {
+  background: var(--pos-surface-container-high);
+}
+.pos-theme .pos-table thead th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.pos-theme .pos-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.15s ease;
+}
+.pos-theme .pos-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.pos-theme .pos-table tbody td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--pos-on-surface);
+  white-space: nowrap;
+}
+.pos-theme .pos-table .pos-td-muted {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+/* ===== Badges ===== */
+.pos-theme .pos-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+}
+.pos-theme .pos-badge-blue {
+  background: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+}
+.pos-theme .pos-badge-green {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+.pos-theme .pos-badge-yellow {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+}
+.pos-theme .pos-badge-red {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.pos-theme .pos-badge-purple {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+.pos-theme .pos-badge-cyan {
+  background: rgba(34, 211, 238, 0.2);
+  color: #22d3ee;
+}
+
+/* ===== Filter Chips ===== */
+.pos-theme .pos-chip {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  border: none;
+}
+.pos-theme .pos-chip-active {
+  background: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.pos-theme .pos-chip-inactive {
+  background: transparent;
+  color: #64748b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pos-theme .pos-chip-inactive:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+}
+
+/* ===== Modal ===== */
+.pos-theme .pos-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 10, 20, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 60;
+  padding: 4rem 1rem 2rem;
+  overflow-y: auto;
+}
+.pos-theme .pos-modal {
+  background: var(--pos-surface-container);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 100%;
+}
+
+/* ===== Action Links ===== */
+.pos-theme .pos-action-link {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #60a5fa;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.pos-theme .pos-action-link:hover {
+  color: #93c5fd;
+}
+.pos-theme .pos-action-link-green {
+  color: #22c55e;
+}
+.pos-theme .pos-action-link-green:hover {
+  color: #4ade80;
+}
+.pos-theme .pos-action-link-purple {
+  color: #a855f7;
+}
+.pos-theme .pos-action-link-purple:hover {
+  color: #c084fc;
+}
+
+/* ===== Error Banner ===== */
+.pos-theme .pos-error-banner {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ===== Metric Cards ===== */
+.pos-theme .pos-metric-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: border-color 0.2s ease;
+}
+.pos-theme .pos-metric-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+.pos-theme .pos-metric-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+.pos-theme .pos-metric-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--pos-on-surface);
+}
+.pos-theme .pos-metric-value-blue { color: #60a5fa; }
+.pos-theme .pos-metric-value-green { color: #22c55e; }
+.pos-theme .pos-metric-value-red { color: #f87171; }
+.pos-theme .pos-metric-value-cyan { color: #22d3ee; }
+
+/* ===== Section Headers ===== */
+.pos-theme .pos-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.pos-theme .pos-section-bar {
+  width: 4px;
+  height: 2rem;
+  background: var(--pos-primary);
+  border-radius: 9999px;
+}
+.pos-theme .pos-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--pos-on-surface);
+}
+
+/* ===== Profile Dropdown ===== */
+.pos-theme .pos-profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: 2.75rem;
+  width: 14rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 30, 54, 0.95);
+  backdrop-filter: blur(20px);
+  z-index: 50;
+}
+
+/* ===== Scrollbar ===== */
+.pos-theme ::-webkit-scrollbar {
+  width: 6px;
+}
+.pos-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pos-theme ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+.pos-theme ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Animations ===== */
+@keyframes posFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.pos-theme .pos-fade-in {
+  animation: posFadeIn 0.3s ease forwards;
+}
+
+@keyframes posPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pos-theme .pos-pulse {
+  animation: posPulse 2s ease-in-out infinite;
+}
+
+/* ===== Recharts Dark Theme Override ===== */
+.pos-theme .recharts-cartesian-grid line {
+  stroke: rgba(255, 255, 255, 0.05);
+}
+.pos-theme .recharts-text {
+  fill: #94a3b8;
+  font-size: 0.75rem;
+}
+.pos-theme .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: var(--pos-surface-container) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.5rem !important;
+  color: var(--pos-on-surface) !important;
+}
+.pos-theme .recharts-legend-item-text {
+  color: #94a3b8 !important;
+}

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { supplierService } from '../services/supplier.service';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 export const supplierController = {
   async getAllSuppliers(req: Request, res: Response) {
@@ -77,9 +78,13 @@ export const supplierController = {
     }
   },
 
-  async recordPayment(req: Request, res: Response) {
+  async recordPayment(req: AuthRequest, res: Response) {
     try {
-      const payment = await supplierService.recordPayment(req.body);
+      const paymentData = {
+        ...req.body,
+        managerId: req.user?.id,
+      };
+      const payment = await supplierService.recordPayment(paymentData);
       res.status(201).json({ success: true, data: payment });
     } catch (error: any) {
       res.status(error.statusCode || 500).json({ error: error.message || 'Failed to record payment' });

@@ -6,36 +6,36 @@
 
 @layer base {
   :root {
-    /* Instagram Light Theme */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    /* Single Mode Glassmorphism Theme */
+    --background: 210 61% 81%;
+    --foreground: 214 52% 24%; /* Dark Slate Blue */
 
     /* Card & Surface */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 214 52% 24%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 214 52% 24%;
 
-    /* Primary - Instagram Blue */
-    --primary: 204 88% 53%;
+    /* Primary - Dark Blue */
+    --primary: 215 72% 14%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 204 88% 65%;
-    --primary-dark: 204 88% 41%;
+    --primary-light: 215 72% 24%;
+    --primary-dark: 215 72% 8%;
 
-    /* Secondary - Subtle Gray */
-    --secondary: 0 0% 98%;
-    --secondary-foreground: 0 0% 0%;
+    /* Secondary */
+    --secondary: 210 61% 70%;
+    --secondary-foreground: 215 72% 14%;
 
-    /* Accent - Instagram Gradient */
-    --accent: 329 90% 56%;
+    /* Accent */
+    --accent: 215 72% 14%;
     --accent-foreground: 0 0% 100%;
-    --accent-light: 329 90% 68%;
-    --accent-dark: 329 90% 44%;
+    --accent-light: 215 72% 24%;
+    --accent-dark: 215 72% 8%;
 
     /* Muted */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 210 61% 75%;
+    --muted-foreground: 215 72% 30%;
 
     /* Success */
     --success: 142 71% 45%;
@@ -50,19 +50,14 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Borders & Inputs */
-    --border: 0 0% 86%;
-    --input: 0 0% 86%;
-    --ring: 204 88% 53%;
+    --border: 210 61% 70%;
+    --input: 210 61% 70%;
+    --ring: 215 72% 14%;
 
-    /* Radius - Instagram style (more rounded) */
+    /* Radius */
     --radius: 0.875rem;
 
-    /* Instagram Gradients */
-    --gradient-primary: linear-gradient(45deg, hsl(329 90% 56%), hsl(43 96% 56%), hsl(204 88% 53%));
-    --gradient-accent: linear-gradient(135deg, hsl(329 90% 56%), hsl(329 90% 68%));
-    --gradient-story: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-
-    /* Shadows - Subtle like Instagram */
+    /* Shadows */
     --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.05);
     --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-strong: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -73,44 +68,7 @@
   }
 
   .dark {
-    /* Instagram Dark Mode */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 100%;
-
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 100%;
-
-    --primary: 204 88% 53%;
-    --primary-foreground: 0 0% 100%;
-    --primary-light: 204 88% 65%;
-    --primary-dark: 204 88% 41%;
-
-    --secondary: 0 0% 13%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 0 0% 13%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 329 90% 56%;
-    --accent-foreground: 0 0% 100%;
-    --accent-light: 329 90% 68%;
-    --accent-dark: 329 90% 44%;
-
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 43 96% 56%;
-    --warning-foreground: 0 0% 0%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 204 88% 53%;
+    /* Identical to :root, enforcing single mode */
   }
 }
 
@@ -120,8 +78,18 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background-image: url('/bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .dark body {
+    /* Same background to enforce single mode */
+    background-image: url('/bg.png');
   }
 }
 
@@ -129,17 +97,42 @@
   /* Service Action Buttons */
   .service-button {
     @apply relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300;
-    background: var(--gradient-primary);
-    box-shadow: var(--shadow-medium);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  }
+  
+  .dark .service-button {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   }
   
   .service-button:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-strong);
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  }
+  
+  .dark .service-button:hover {
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  }
+  
+  .logo-halo {
+    filter: drop-shadow(0 0 15px rgba(10, 31, 61, 0.4));
+  }
+  
+  .dark .logo-halo {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
   }
   
   .service-button-accent {
-    background: var(--gradient-accent);
+    background: var(--gradient-primary);
+    box-shadow: 0 0 15px rgba(47, 183, 216, 0.4);
   }
   
   /* Status Badges */
@@ -167,5 +160,28 @@
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Logo Truck Drive-In Animation */
+  .logo-drive-in {
+    animation: truckDriveIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes truckDriveIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-120vw) rotate(-5deg);
+    }
+    60% {
+      opacity: 1;
+      transform: translateX(10px) rotate(1deg);
+    }
+    80% {
+      transform: translateX(-5px) rotate(-0.5deg);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) rotate(0deg);
+    }
   }
 }

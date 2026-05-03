@@ -56,11 +56,11 @@ services:
         node dist/server.js
       "
 
-  pos-dashboard:
+  lotchan-pos-web:
     build:
-      context: ./pos-dashboard
+      context: ./lotchan-pos-web
       dockerfile: Dockerfile
-    container_name: mobileshop-pos-dashboard
+    container_name: mobileshop-pos-web
     restart: unless-stopped
     depends_on:
       - backend

@@ -42,7 +42,7 @@ router.delete('/suppliers/:id', authenticate, requireRole(['ADMIN']), supplierCo
 router.get('/products', authenticate, requireRole(['MANAGER', 'ADMIN']), productController.getAllProducts);
 router.get('/products/:id', authenticate, requireRole(['MANAGER', 'ADMIN']), productController.getProductById);
 router.post('/products', authenticate, requireRole(['MANAGER', 'ADMIN']), productController.createProduct);
-router.patch('/products/:id', authenticate, requireRole(['ADMIN']), productController.updateProduct);
+router.patch('/products/:id', authenticate, requireRole(['MANAGER', 'ADMIN']), productController.updateProduct);
 router.delete('/products/:id', authenticate, requireRole(['ADMIN']), productController.deleteProduct);
 
 // Categories
