@@ -21,6 +21,7 @@ router.post('/managers/:id/reset-password', auth_middleware_1.authenticate, (0, 
 // Manager Dashboard: Profit & Cashflow (Manager only)
 router.get('/manager/profit', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), manager_controller_1.managerController.getProfit);
 router.get('/daily-cashflow', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER']), manager_controller_1.managerController.getDailyCashflow);
+router.get('/dashboard-stats', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), manager_controller_1.managerController.getDashboardStats);
 // Purchases
 router.post('/purchases', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), purchase_controller_1.purchaseController.createPurchase);
 router.get('/purchases', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), purchase_controller_1.purchaseController.getPurchases);
@@ -39,7 +40,7 @@ router.delete('/suppliers/:id', auth_middleware_1.authenticate, (0, auth_middlew
 router.get('/products', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), product_controller_1.productController.getAllProducts);
 router.get('/products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), product_controller_1.productController.getProductById);
 router.post('/products', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), product_controller_1.productController.createProduct);
-router.patch('/products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), product_controller_1.productController.updateProduct);
+router.patch('/products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), product_controller_1.productController.updateProduct);
 router.delete('/products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), product_controller_1.productController.deleteProduct);
 // Categories
 router.get('/categories', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), async (req, res) => {

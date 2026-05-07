@@ -1,18 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 .admin-glass-panel {
-    background: rgba(255, 255, 255, 0.05);
+    background: #0b1727;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 .admin-signature-gradient {
-    background: linear-gradient(135deg, #aec8f0 0%, #2593f2 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
 }
 .admin-glow-blue {
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
 }
 .admin-glow-amber {
-    box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
+}
+.admin-glow-red {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
 }
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;

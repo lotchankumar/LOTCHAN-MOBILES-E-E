@@ -12,6 +12,7 @@ export const repairService = {
     estimatedCost?: number;
     advancePaid?: number;
     assignedToId?: string;
+    branchId: string;
   }) {
     const ticketNumber = `REP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
@@ -25,6 +26,7 @@ export const repairService = {
         estimatedCost: data.estimatedCost,
         advancePaid: data.advancePaid || 0,
         assignedToId: data.assignedToId,
+        branchId: data.branchId,
         status: RepairStatus.RECEIVED
       },
       include: { customer: true }
@@ -42,9 +44,11 @@ export const repairService = {
 
   async usePartsInRepair(repairJobId: string, parts: Array<{ productId: string; quantity: number }>) {
     return prisma.$transaction(async (tx) => {
+      const job = await tx.repairJob.findUniqueOrThrow({ where: { id: repairJobId }, select: { branchId: true } });
+      
       for (const part of parts) {
         // Check stock and decrement atomically
-        await inventoryService.decrementStock(tx, part.productId, part.quantity);
+        await inventoryService.decrementStock(tx, part.productId, part.quantity, job.branchId);
         
         const product = await tx.product.findUniqueOrThrow({ where: { id: part.productId } });
         

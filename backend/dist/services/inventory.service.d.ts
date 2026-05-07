@@ -36,6 +36,7 @@ export interface ProductFilters {
     supplierId?: string;
     search?: string;
     lowStock?: boolean;
+    branchId?: string;
 }
 export type MovementType = 'SALE' | 'REPAIR_USE' | 'PURCHASE_RECEIVE' | 'MANUAL_ADJUSTMENT' | 'RETURN';
 interface LogMovementArgs {
@@ -45,10 +46,11 @@ interface LogMovementArgs {
     reference?: string | null;
     purchaseOrderId?: string | null;
     userId?: string | null;
+    branchId: string;
 }
 declare function logMovement(tx: Prisma.TransactionClient, args: LogMovementArgs): Promise<any>;
-declare function checkStock(productId: string, quantity: number): Promise<boolean>;
-declare function decrementStock(tx: Prisma.TransactionClient, productId: string, quantity: number, opts?: {
+declare function checkStock(productId: string, quantity: number, branchId: string): Promise<boolean>;
+declare function decrementStock(tx: Prisma.TransactionClient, productId: string, quantity: number, branchId: string, opts?: {
     type?: MovementType;
     reference?: string | null;
     userId?: string | null;
@@ -56,32 +58,24 @@ declare function decrementStock(tx: Prisma.TransactionClient, productId: string,
     success: boolean;
     updatedProduct: any;
 }>;
-declare function incrementStock(tx: Prisma.TransactionClient, productId: string, quantity: number, opts?: {
+declare function incrementStock(tx: Prisma.TransactionClient, productId: string, quantity: number, branchId: string, opts?: {
     type?: MovementType;
     reference?: string | null;
     purchaseOrderId?: string | null;
     userId?: string | null;
 }): Promise<void>;
-declare function adjustStock(productId: string, quantity: number, reason: string, userId?: string | null): Promise<{
-    name: string;
+declare function adjustStock(productId: string, quantity: number, reason: string, branchId: string, userId?: string | null): Promise<{
     id: string;
+    branchId: string;
     createdAt: Date;
     updatedAt: Date;
-    description: string | null;
-    supplierId: string | null;
-    sku: string;
-    category: import(".prisma/client").$Enums.Category;
-    categoryId: string | null;
-    brand: string;
-    model: string | null;
-    price: number;
-    cost: number;
+    stockQty: number;
+    productId: string;
+    minStock: number;
+}>;
+declare function getLowStockProducts(branchId?: string): Promise<{
     stockQty: number;
     minStock: number;
-    imageUrl: string | null;
-    isAvailable: boolean;
-}>;
-declare function getLowStockProducts(): Promise<({
     supplier: {
         name: string;
         id: string;
@@ -103,10 +97,10 @@ declare function getLowStockProducts(): Promise<({
             model: string | null;
             price: number;
             cost: number;
-            stockQty: number;
-            minStock: number;
             imageUrl: string | null;
             isAvailable: boolean;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
         }[] | ({
             name: string;
             id: string;
@@ -121,10 +115,10 @@ declare function getLowStockProducts(): Promise<({
             model: string | null;
             price: number;
             cost: number;
-            stockQty: number;
-            minStock: number;
             imageUrl: string | null;
             isAvailable: boolean;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
         } | {
             name: string;
             id: string;
@@ -139,10 +133,10 @@ declare function getLowStockProducts(): Promise<({
             model: string | null;
             price: number;
             cost: number;
-            stockQty: number;
-            minStock: number;
             imageUrl: string | null;
             isAvailable: boolean;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
         })[] | ({
             name: string;
             id: string;
@@ -154,8 +148,6 @@ declare function getLowStockProducts(): Promise<({
             categoryId: string | null;
             brand: string;
             model: string | null;
-            stockQty: number;
-            minStock: number;
             imageUrl: string | null;
             isAvailable: boolean;
             sellingPrice: number;
@@ -172,8 +164,6 @@ declare function getLowStockProducts(): Promise<({
             categoryId: string | null;
             brand: string;
             model: string | null;
-            stockQty: number;
-            minStock: number;
             imageUrl: string | null;
             isAvailable: boolean;
             sellingPrice: number;
@@ -190,8 +180,6 @@ declare function getLowStockProducts(): Promise<({
             categoryId: string | null;
             brand: string;
             model: string | null;
-            stockQty: number;
-            minStock: number;
             imageUrl: string | null;
             isAvailable: boolean;
             sellingPrice: number;
@@ -201,7 +189,15 @@ declare function getLowStockProducts(): Promise<({
         [x: number]: never;
         [x: symbol]: never;
     } | null;
-} & {
+    branchStocks: {
+        id: string;
+        branchId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        stockQty: number;
+        productId: string;
+        minStock: number;
+    }[];
     name: string;
     id: string;
     createdAt: Date;
@@ -215,16 +211,16 @@ declare function getLowStockProducts(): Promise<({
     model: string | null;
     price: number;
     cost: number;
-    stockQty: number;
-    minStock: number;
     imageUrl: string | null;
     isAvailable: boolean;
-})[]>;
-declare function getReorderSuggestions(): Promise<{
+    showInPosApp: boolean;
+    showInCustomerApp: boolean;
+}[]>;
+declare function getReorderSuggestions(branchId?: string): Promise<{
     supplier: any;
     products: any[];
 }[]>;
-declare function getStockValuation(groupBy?: 'category'): Promise<{
+declare function getStockValuation(groupBy?: 'category', branchId?: string): Promise<{
     totalValue: any;
     totalUnits: any;
     byCategory: {
@@ -238,8 +234,150 @@ declare function getStockValuation(groupBy?: 'category'): Promise<{
     totalUnits: any;
     byCategory?: undefined;
 }>;
-declare function getProducts(filters?: ProductFilters): Promise<any[]>;
-declare function getProductById(id: string): Promise<{
+declare function getProducts(filters?: ProductFilters): Promise<{
+    stockQty: number;
+    minStock: number;
+    supplier: {
+        name: string;
+        id: string;
+    } | null;
+    categoryType: {
+        [x: string]: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            supplierId: string | null;
+            sku: string;
+            category: import(".prisma/client").$Enums.Category;
+            categoryId: string | null;
+            brand: string;
+            model: string | null;
+            price: number;
+            cost: number;
+            imageUrl: string | null;
+            isAvailable: boolean;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
+        }[] | ({
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            supplierId: string | null;
+            sku: string;
+            category: import(".prisma/client").$Enums.Category;
+            categoryId: string | null;
+            brand: string;
+            model: string | null;
+            price: number;
+            cost: number;
+            imageUrl: string | null;
+            isAvailable: boolean;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
+        } | {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            supplierId: string | null;
+            sku: string;
+            category: import(".prisma/client").$Enums.Category;
+            categoryId: string | null;
+            brand: string;
+            model: string | null;
+            price: number;
+            cost: number;
+            imageUrl: string | null;
+            isAvailable: boolean;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
+        })[] | ({
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            supplierId: string | null;
+            sku: string;
+            categoryId: string | null;
+            brand: string;
+            model: string | null;
+            imageUrl: string | null;
+            isAvailable: boolean;
+            sellingPrice: number;
+            compatibleDevices: string | null;
+            purchasePrice: number;
+        } | {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            supplierId: string | null;
+            sku: string;
+            categoryId: string | null;
+            brand: string;
+            model: string | null;
+            imageUrl: string | null;
+            isAvailable: boolean;
+            sellingPrice: number;
+            compatibleDevices: string | null;
+            purchasePrice: number;
+        })[] | {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            supplierId: string | null;
+            sku: string;
+            categoryId: string | null;
+            brand: string;
+            model: string | null;
+            imageUrl: string | null;
+            isAvailable: boolean;
+            sellingPrice: number;
+            compatibleDevices: string | null;
+            purchasePrice: number;
+        }[];
+        [x: number]: never;
+        [x: symbol]: never;
+    } | null;
+    branchStocks: {
+        id: string;
+        branchId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        stockQty: number;
+        productId: string;
+        minStock: number;
+    }[];
+    name: string;
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    description: string | null;
+    supplierId: string | null;
+    sku: string;
+    category: import(".prisma/client").$Enums.Category;
+    categoryId: string | null;
+    brand: string;
+    model: string | null;
+    price: number;
+    cost: number;
+    imageUrl: string | null;
+    isAvailable: boolean;
+    showInPosApp: boolean;
+    showInCustomerApp: boolean;
+}[]>;
+declare function getProductById(id: string, branchId?: string): Promise<{
+    stockQty: number;
+    minStock: number;
     supplier: {
         name: string;
         id: string;
@@ -262,7 +400,15 @@ declare function getProductById(id: string): Promise<{
         icon: string | null;
         displayOrder: number;
     } | null;
-} & {
+    branchStocks: {
+        id: string;
+        branchId: string;
+        createdAt: Date;
+        updatedAt: Date;
+        stockQty: number;
+        productId: string;
+        minStock: number;
+    }[];
     name: string;
     id: string;
     createdAt: Date;
@@ -276,10 +422,10 @@ declare function getProductById(id: string): Promise<{
     model: string | null;
     price: number;
     cost: number;
-    stockQty: number;
-    minStock: number;
     imageUrl: string | null;
     isAvailable: boolean;
+    showInPosApp: boolean;
+    showInCustomerApp: boolean;
 }>;
 declare function createProduct(data: CreateProductData): Promise<{
     name: string;
@@ -295,10 +441,10 @@ declare function createProduct(data: CreateProductData): Promise<{
     model: string | null;
     price: number;
     cost: number;
-    stockQty: number;
-    minStock: number;
     imageUrl: string | null;
     isAvailable: boolean;
+    showInPosApp: boolean;
+    showInCustomerApp: boolean;
 }>;
 declare function updateProduct(id: string, data: UpdateProductData): Promise<{
     name: string;
@@ -314,10 +460,10 @@ declare function updateProduct(id: string, data: UpdateProductData): Promise<{
     model: string | null;
     price: number;
     cost: number;
-    stockQty: number;
-    minStock: number;
     imageUrl: string | null;
     isAvailable: boolean;
+    showInPosApp: boolean;
+    showInCustomerApp: boolean;
 }>;
 declare function deleteProduct(id: string): Promise<void>;
 declare function getCategories(): Promise<({
@@ -445,7 +591,7 @@ export declare const inventoryService: {
                 name: string;
                 id: string;
                 sku: string;
-                stockQty: number;
+                stockQty: never;
             }[];
             payments: {
                 id: string;

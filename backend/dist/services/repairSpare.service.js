@@ -27,8 +27,14 @@ exports.repairSpareService = {
             include: {
                 categoryType: { select: { id: true, name: true } },
                 supplier: { select: { id: true, name: true } },
+                branchStocks: filters?.branchId ? { where: { branchId: filters.branchId } } : true,
             },
             orderBy: { createdAt: 'desc' },
+        });
+        products = products.map((p) => {
+            const stockQty = p.branchStocks?.reduce((sum, bs) => sum + bs.stockQty, 0) || 0;
+            const minStock = p.branchStocks?.reduce((sum, bs) => sum + bs.minStock, 0) || 5;
+            return { ...p, stockQty, minStock };
         });
         if (filters?.lowStock) {
             products = products.filter((p) => p.stockQty <= p.minStock);
@@ -41,11 +47,14 @@ exports.repairSpareService = {
             include: {
                 categoryType: { select: { id: true, name: true } },
                 supplier: { select: { id: true, name: true } },
+                branchStocks: true,
             },
         });
         if (!product)
             throw new error_middleware_1.AppError('Spare product not found', 404);
-        return product;
+        const stockQty = product.branchStocks?.reduce((sum, bs) => sum + bs.stockQty, 0) || 0;
+        const minStock = product.branchStocks?.reduce((sum, bs) => sum + bs.minStock, 0) || 5;
+        return { ...product, stockQty, minStock };
     },
     async createSpareProduct(data) {
         if (await db.repairSpareProduct.findUnique({ where: { sku: data.sku } })) {
@@ -145,8 +154,8 @@ exports.repairSpareService = {
         return purchase;
     },
     async createSparePurchase(data) {
-        const { managerId, supplier, invoiceNo, notes, items } = data;
-        if (!managerId || !supplier || !invoiceNo || !items || !Array.isArray(items) || items.length === 0) {
+        const { managerId, supplier, invoiceNo, notes, items, branchId } = data;
+        if (!managerId || !supplier || !invoiceNo || !branchId || !items || !Array.isArray(items) || items.length === 0) {
             throw new error_middleware_1.AppError('Missing required fields', 400);
         }
         const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
@@ -158,6 +167,7 @@ exports.repairSpareService = {
                     invoiceNo,
                     totalAmount,
                     notes: notes || null,
+                    branchId,
                     items: {
                         create: items.map((item) => ({
                             spareProductId: item.spareProductId,
@@ -180,15 +190,16 @@ exports.repairSpareService = {
             });
             // Update stock for each item, and also set selling price if provided
             for (const item of items) {
-                const updateData = {
-                    stockQty: { increment: item.quantity },
-                };
                 if (item.sellingPrice && item.sellingPrice > 0) {
-                    updateData.sellingPrice = item.sellingPrice;
+                    await tx.repairSpareProduct.update({
+                        where: { id: item.spareProductId },
+                        data: { sellingPrice: item.sellingPrice },
+                    });
                 }
-                await tx.repairSpareProduct.update({
-                    where: { id: item.spareProductId },
-                    data: updateData,
+                await tx.branchRepairSpareStock.upsert({
+                    where: { branchId_spareProductId: { branchId, spareProductId: item.spareProductId } },
+                    update: { stockQty: { increment: item.quantity } },
+                    create: { branchId, spareProductId: item.spareProductId, stockQty: item.quantity }
                 });
             }
             return created;
@@ -205,8 +216,8 @@ exports.repairSpareService = {
                 where: { purchaseId: id },
             });
             for (const item of items) {
-                await tx.repairSpareProduct.update({
-                    where: { id: item.spareProductId },
+                await tx.branchRepairSpareStock.update({
+                    where: { branchId_spareProductId: { branchId: purchase.branchId, spareProductId: item.spareProductId } },
                     data: { stockQty: { decrement: item.quantity } },
                 });
             }

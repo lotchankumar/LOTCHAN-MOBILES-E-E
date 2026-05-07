@@ -34,6 +34,7 @@ export interface SpareProductFilters {
     supplierId?: string;
     search?: string;
     lowStock?: boolean;
+    branchId?: string;
 }
 export interface SparePurchaseFilters {
     startDate?: string;
@@ -50,6 +51,7 @@ export interface CreateSparePurchaseData {
         unitCost: number;
         sellingPrice?: number;
     }>;
+    branchId: string;
 }
 export declare const repairSpareService: {
     getAllSpareProducts(filters?: SpareProductFilters): Promise<any[]>;

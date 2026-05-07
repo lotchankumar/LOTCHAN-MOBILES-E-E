@@ -223,6 +223,47 @@ export interface CashflowResponse {
 declare const managerService: {
     getProfit(branchId: string | undefined | null, startDate: string, endDate: string): Promise<ProfitData>;
     getDailyCashflow(branchId: string, date: string): Promise<CashflowResponse>;
+    getDashboardStats(branchId: string | undefined | null): Promise<{
+        salesMtd: number;
+        profitMtd: number;
+        liabilities: number;
+        stockValuation: {
+            totalValue: any;
+            totalUnits: any;
+            byCategory: {
+                categoryId: string | null;
+                name: string;
+                value: number;
+                units: number;
+            }[];
+        } | {
+            totalValue: any;
+            totalUnits: any;
+            byCategory?: undefined;
+        };
+        lowStock: {
+            id: any;
+            name: any;
+            stockQty: any;
+            minStock: any;
+        }[];
+        supplierOrders: {
+            id: string;
+            supplierName: string;
+            status: import(".prisma/client").$Enums.POStatus;
+        }[];
+        users: {
+            id: string;
+            name: string;
+            role: import(".prisma/client").$Enums.Role;
+            branchName: string;
+            initials: string;
+        }[];
+        technicianPerformance: {
+            name: string;
+            value: number;
+        }[];
+    }>;
     getAllManagers(): Promise<({
         branch: {
             name: string;

@@ -20,21 +20,22 @@ async function logMovement(tx, args) {
             reference: args.reference ?? null,
             purchaseOrderId: args.purchaseOrderId ?? null,
             userId: args.userId ?? null,
+            branchId: args.branchId,
         },
     });
 }
-async function checkStock(productId, quantity) {
-    const product = await client_1.default.product.findUnique({
-        where: { id: productId },
+async function checkStock(productId, quantity, branchId) {
+    const branchStock = await client_1.default.branchStock.findUnique({
+        where: { branchId_productId: { branchId, productId } },
         select: { stockQty: true },
     });
-    return product ? product.stockQty >= quantity : false;
+    return branchStock ? branchStock.stockQty >= quantity : false;
 }
-async function decrementStock(tx, productId, quantity, opts = {}) {
+async function decrementStock(tx, productId, quantity, branchId, opts = {}) {
     if (quantity <= 0)
         throw new error_middleware_1.AppError('Quantity must be positive', 400);
-    const updated = await tx.product.update({
-        where: { id: productId, stockQty: { gte: quantity } },
+    const updated = await tx.branchStock.update({
+        where: { branchId_productId: { branchId, productId }, stockQty: { gte: quantity } },
         data: { stockQty: { decrement: quantity } },
     });
     await logMovement(tx, {
@@ -43,15 +44,17 @@ async function decrementStock(tx, productId, quantity, opts = {}) {
         type: opts.type ?? 'SALE',
         reference: opts.reference ?? null,
         userId: opts.userId ?? null,
+        branchId,
     });
     return { success: true, updatedProduct: updated };
 }
-async function incrementStock(tx, productId, quantity, opts = {}) {
+async function incrementStock(tx, productId, quantity, branchId, opts = {}) {
     if (quantity <= 0)
         throw new error_middleware_1.AppError('Quantity must be positive', 400);
-    await tx.product.update({
-        where: { id: productId },
-        data: { stockQty: { increment: quantity } },
+    await tx.branchStock.upsert({
+        where: { branchId_productId: { branchId, productId } },
+        update: { stockQty: { increment: quantity } },
+        create: { branchId, productId, stockQty: quantity },
     });
     await logMovement(tx, {
         productId,
@@ -60,9 +63,10 @@ async function incrementStock(tx, productId, quantity, opts = {}) {
         reference: opts.reference ?? null,
         purchaseOrderId: opts.purchaseOrderId ?? null,
         userId: opts.userId ?? null,
+        branchId,
     });
 }
-async function adjustStock(productId, quantity, reason, userId) {
+async function adjustStock(productId, quantity, reason, branchId, userId) {
     if (!Number.isInteger(quantity) || quantity === 0) {
         throw new error_middleware_1.AppError('Quantity must be a non-zero integer', 400);
     }
@@ -72,12 +76,17 @@ async function adjustStock(productId, quantity, reason, userId) {
         const product = await tx.product.findUnique({ where: { id: productId } });
         if (!product)
             throw new error_middleware_1.AppError('Product not found', 404);
-        const newQty = product.stockQty + quantity;
+        const branchStock = await tx.branchStock.findUnique({
+            where: { branchId_productId: { branchId, productId } }
+        });
+        const currentQty = branchStock?.stockQty || 0;
+        const newQty = currentQty + quantity;
         if (newQty < 0)
             throw new error_middleware_1.AppError('Adjustment would make stock negative', 400);
-        const updated = await tx.product.update({
-            where: { id: productId },
-            data: { stockQty: newQty },
+        const updated = await tx.branchStock.upsert({
+            where: { branchId_productId: { branchId, productId } },
+            update: { stockQty: newQty },
+            create: { branchId, productId, stockQty: newQty }
         });
         await logMovement(tx, {
             productId,
@@ -85,23 +94,29 @@ async function adjustStock(productId, quantity, reason, userId) {
             type: 'MANUAL_ADJUSTMENT',
             reference: reason.trim(),
             userId: userId ?? null,
+            branchId,
         });
         return updated;
     });
 }
-async function getLowStockProducts() {
+async function getLowStockProducts(branchId) {
     const products = await client_1.default.product.findMany({
         where: { isAvailable: true },
         include: {
             supplier: { select: { id: true, name: true, phone: true, email: true } },
             categoryType: { select: { id: true, name: true, slug: true } },
+            branchStocks: branchId ? { where: { branchId } } : true,
         },
-        orderBy: { stockQty: 'asc' },
     });
-    return products.filter((p) => p.stockQty <= p.minStock);
+    const mapped = products.map((p) => {
+        const stockQty = p.branchStocks.reduce((sum, bs) => sum + bs.stockQty, 0);
+        const minStock = p.branchStocks.reduce((sum, bs) => sum + bs.minStock, 0) || 5;
+        return { ...p, stockQty, minStock };
+    });
+    return mapped.filter((p) => p.stockQty <= p.minStock).sort((a, b) => a.stockQty - b.stockQty);
 }
-async function getReorderSuggestions() {
-    const low = await getLowStockProducts();
+async function getReorderSuggestions(branchId) {
+    const low = await getLowStockProducts(branchId);
     const grouped = {};
     for (const p of low) {
         const key = p.supplier?.id ?? '__unassigned__';
@@ -123,16 +138,23 @@ async function getReorderSuggestions() {
     }
     return Object.values(grouped);
 }
-async function getStockValuation(groupBy) {
+async function getStockValuation(groupBy, branchId) {
     const products = await client_1.default.product.findMany({
         where: { isAvailable: true },
-        include: { categoryType: { select: { id: true, name: true } } },
+        include: {
+            categoryType: { select: { id: true, name: true } },
+            branchStocks: branchId ? { where: { branchId } } : true,
+        },
     });
-    const totalValue = products.reduce((s, p) => s + p.stockQty * p.cost, 0);
-    const totalUnits = products.reduce((s, p) => s + p.stockQty, 0);
+    const mapped = products.map((p) => {
+        const stockQty = p.branchStocks.reduce((sum, bs) => sum + bs.stockQty, 0);
+        return { ...p, stockQty };
+    });
+    const totalValue = mapped.reduce((s, p) => s + p.stockQty * p.cost, 0);
+    const totalUnits = mapped.reduce((s, p) => s + p.stockQty, 0);
     if (groupBy === 'category') {
         const byCat = {};
-        for (const p of products) {
+        for (const p of mapped) {
             const id = p.categoryType?.id ?? '__none__';
             const name = p.categoryType?.name ?? 'Uncategorized';
             if (!byCat[id])
@@ -159,30 +181,39 @@ async function getProducts(filters) {
             { sku: { contains: filters.search } },
         ];
     }
-    let products = await client_1.default.product.findMany({
+    const result = await client_1.default.product.findMany({
         where,
         include: {
             supplier: { select: { id: true, name: true } },
             categoryType: { select: { id: true, name: true, slug: true } },
+            branchStocks: filters?.branchId ? { where: { branchId: filters.branchId } } : true,
         },
         orderBy: { createdAt: 'desc' },
+    });
+    let products = result.map(p => {
+        const stockQty = p.branchStocks.reduce((sum, bs) => sum + bs.stockQty, 0);
+        const minStock = p.branchStocks.reduce((sum, bs) => sum + bs.minStock, 0) || 5;
+        return { ...p, stockQty, minStock };
     });
     if (filters?.lowStock) {
         products = products.filter((p) => p.stockQty <= p.minStock);
     }
     return products;
 }
-async function getProductById(id) {
+async function getProductById(id, branchId) {
     const product = await client_1.default.product.findUnique({
         where: { id },
         include: {
             supplier: true,
             categoryType: true,
+            branchStocks: branchId ? { where: { branchId } } : true,
         },
     });
     if (!product)
         throw new error_middleware_1.AppError('Product not found', 404);
-    return product;
+    const stockQty = product.branchStocks.reduce((sum, bs) => sum + bs.stockQty, 0);
+    const minStock = product.branchStocks.reduce((sum, bs) => sum + bs.minStock, 0) || 5;
+    return { ...product, stockQty, minStock };
 }
 async function createProduct(data) {
     if (await client_1.default.product.findUnique({ where: { sku: data.sku } })) {
@@ -199,8 +230,6 @@ async function createProduct(data) {
         ...(data.model !== undefined && { model: data.model }),
         ...(data.categoryId && { categoryId: data.categoryId }),
         ...(data.supplierId && { supplierId: data.supplierId }),
-        ...(data.stockQty !== undefined && { stockQty: data.stockQty }),
-        ...(data.minStock !== undefined && { minStock: data.minStock }),
         ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
     };
     return client_1.default.product.create({ data: createData });
@@ -225,8 +254,6 @@ async function updateProduct(id, data) {
         ...(data.model !== undefined && { model: data.model }),
         ...(data.price !== undefined && { price: data.price }),
         ...(data.cost !== undefined && { cost: data.cost }),
-        ...(data.stockQty !== undefined && { stockQty: data.stockQty }),
-        ...(data.minStock !== undefined && { minStock: data.minStock }),
         ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
         ...(data.isAvailable !== undefined && { isAvailable: data.isAvailable }),
     };

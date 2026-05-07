@@ -96,16 +96,16 @@ const BranchesPage = () => {
           )}
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/10">
+            <table className="min-w-full min-w-[700px] divide-y divide-white/10">
               <thead className="bg-[#1a3654]/50 text-[#aec8f0]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Address</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Staff Count</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Orders Count</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-[#7892b7] uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Address</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Staff</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Orders</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Created</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-[#7892b7] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-transparent divide-y divide-white/10">
@@ -124,15 +124,15 @@ const BranchesPage = () => {
                 ) : (
                   branches.map((branch) => (
                     <tr key={branch.id} className="hover:bg-[#1a3654]/50 text-[#aec8f0]">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#d2e4ff]">{branch.name}</td>
-                      <td className="px-6 py-4 text-sm text-[#d2e4ff] max-w-xs truncate">{branch.address || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch.phone || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.users || 0}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.orders || 0}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#7892b7]">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-[#d2e4ff]">{branch.name}</td>
+                      <td className="px-4 py-4 text-sm text-[#d2e4ff] max-w-[160px] truncate">{branch.address || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch.phone || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.users || 0}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.orders || 0}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#7892b7]">
                         {new Date(branch.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div className="flex items-center justify-center gap-3">
                           <button
                             onClick={() => openEditModal(branch)}

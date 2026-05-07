@@ -22,6 +22,7 @@ export interface CreatePaymentData {
     reference?: string;
     description?: string;
     paymentDate?: string;
+    managerId?: string;
 }
 export declare const supplierService: {
     getAllSuppliers(): Promise<{
@@ -51,7 +52,7 @@ export declare const supplierService: {
             name: string;
             id: string;
             sku: string;
-            stockQty: number;
+            stockQty: never;
         }[];
         payments: {
             id: string;

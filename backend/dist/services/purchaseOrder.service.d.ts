@@ -37,8 +37,8 @@ export declare const purchaseOrderService: {
             };
         } & {
             id: string;
-            quantity: number;
             productId: string;
+            quantity: number;
             unitCost: number;
             receivedQty: number;
             purchaseOrderId: string;
@@ -63,11 +63,12 @@ export declare const purchaseOrderService: {
         } | null;
         stockMovements: {
             id: string;
+            branchId: string;
             createdAt: Date;
             type: import(".prisma/client").$Enums.MovementType;
             reference: string | null;
-            quantity: number;
             productId: string;
+            quantity: number;
             purchaseOrderId: string | null;
             userId: string | null;
         }[];
@@ -103,15 +104,15 @@ export declare const purchaseOrderService: {
                 model: string | null;
                 price: number;
                 cost: number;
-                stockQty: number;
-                minStock: number;
                 imageUrl: string | null;
                 isAvailable: boolean;
+                showInPosApp: boolean;
+                showInCustomerApp: boolean;
             };
         } & {
             id: string;
-            quantity: number;
             productId: string;
+            quantity: number;
             unitCost: number;
             receivedQty: number;
             purchaseOrderId: string;
@@ -146,8 +147,8 @@ export declare const purchaseOrderService: {
             };
         } & {
             id: string;
-            quantity: number;
             productId: string;
+            quantity: number;
             unitCost: number;
             receivedQty: number;
             purchaseOrderId: string;
@@ -178,8 +179,8 @@ export declare const purchaseOrderService: {
             };
         } & {
             id: string;
-            quantity: number;
             productId: string;
+            quantity: number;
             unitCost: number;
             receivedQty: number;
             purchaseOrderId: string;
@@ -210,8 +211,8 @@ export declare const purchaseOrderService: {
             };
         } & {
             id: string;
-            quantity: number;
             productId: string;
+            quantity: number;
             unitCost: number;
             receivedQty: number;
             purchaseOrderId: string;

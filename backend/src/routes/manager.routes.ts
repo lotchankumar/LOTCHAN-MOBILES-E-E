@@ -19,6 +19,7 @@ router.post('/managers/:id/reset-password', authenticate, requireRole(['ADMIN'])
 // Manager Dashboard: Profit & Cashflow (Manager only)
 router.get('/manager/profit', authenticate, requireRole(['MANAGER', 'ADMIN']), managerController.getProfit);
 router.get('/daily-cashflow', authenticate, requireRole(['MANAGER']), managerController.getDailyCashflow);
+router.get('/dashboard-stats', authenticate, requireRole(['MANAGER', 'ADMIN']), managerController.getDashboardStats);
 
 // Purchases
 router.post('/purchases', authenticate, requireRole(['MANAGER', 'ADMIN']), purchaseController.createPurchase);

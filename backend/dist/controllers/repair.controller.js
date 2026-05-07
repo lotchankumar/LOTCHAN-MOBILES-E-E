@@ -19,7 +19,8 @@ exports.repairController = {
                 issueDescription,
                 estimatedCost,
                 advancePaid,
-                assignedToId
+                assignedToId,
+                branchId: req.body.branchId || user?.branchId
             });
             res.status(201).json(job);
         }

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 export declare const supplierController: {
     getAllSuppliers(req: Request, res: Response): Promise<void>;
     getSupplier(req: Request, res: Response): Promise<void>;
@@ -6,6 +7,6 @@ export declare const supplierController: {
     updateSupplier(req: Request, res: Response): Promise<void>;
     deleteSupplier(req: Request, res: Response): Promise<void>;
     getPayments(req: Request, res: Response): Promise<void>;
-    recordPayment(req: Request, res: Response): Promise<void>;
+    recordPayment(req: AuthRequest, res: Response): Promise<void>;
 };
 //# sourceMappingURL=supplier.controller.d.ts.map

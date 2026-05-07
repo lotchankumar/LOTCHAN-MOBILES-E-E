@@ -63,6 +63,28 @@ exports.managerController = {
         catch (err) {
             next(err);
         }
+    },
+    async getDashboardStats(req, res, next) {
+        try {
+            const { branchId: queryBranchId } = req.query;
+            let targetBranchId = req.user.branchId;
+            if (req.user.role === 'ADMIN') {
+                if (queryBranchId && typeof queryBranchId === 'string') {
+                    targetBranchId = queryBranchId;
+                }
+                else {
+                    targetBranchId = 'all'; // Default to all branches for Admin
+                }
+            }
+            if (!targetBranchId && req.user.role !== 'ADMIN') {
+                throw new error_middleware_1.AppError('Branch ID is required', 400);
+            }
+            const stats = await manager_service_1.managerService.getDashboardStats(targetBranchId);
+            res.json({ success: true, data: stats });
+        }
+        catch (err) {
+            next(err);
+        }
     }
 };
 //# sourceMappingURL=manager.controller.js.map

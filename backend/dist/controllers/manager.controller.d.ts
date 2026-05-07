@@ -13,5 +13,6 @@ export declare const managerController: {
     getAllBranches(req: Request, res: Response): Promise<void>;
     getDailyCashflow(req: AuthRequest, res: Response): Promise<void>;
     getProfit(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
+    getDashboardStats(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
 };
 //# sourceMappingURL=manager.controller.d.ts.map

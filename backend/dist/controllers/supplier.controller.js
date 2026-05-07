@@ -79,7 +79,11 @@ exports.supplierController = {
     },
     async recordPayment(req, res) {
         try {
-            const payment = await supplier_service_1.supplierService.recordPayment(req.body);
+            const paymentData = {
+                ...req.body,
+                managerId: req.user?.id,
+            };
+            const payment = await supplier_service_1.supplierService.recordPayment(paymentData);
             res.status(201).json({ success: true, data: payment });
         }
         catch (error) {

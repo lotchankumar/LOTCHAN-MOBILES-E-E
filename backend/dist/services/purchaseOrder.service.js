@@ -96,9 +96,11 @@ exports.purchaseOrderService = {
             throw new error_middleware_1.AppError('Purchase order not found', 404);
         if (po.status === 'RECEIVED')
             throw new error_middleware_1.AppError('Purchase order already received', 400);
+        if (!po.branchId)
+            throw new error_middleware_1.AppError('Purchase order must be assigned to a branch to receive stock', 400);
         return client_1.default.$transaction(async (tx) => {
             for (const item of po.items) {
-                await inventory_service_1.inventoryService.incrementStock(tx, item.productId, item.quantity, {
+                await inventory_service_1.inventoryService.incrementStock(tx, item.productId, item.quantity, po.branchId, {
                     type: 'PURCHASE_RECEIVE',
                     reference: `PO:${po.orderNumber}`,
                     purchaseOrderId: po.id,

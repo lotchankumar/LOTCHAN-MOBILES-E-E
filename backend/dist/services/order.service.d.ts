@@ -9,6 +9,7 @@ export declare const orderService: {
         orderType: OrderType;
         paymentMethod: PaymentMethod;
         staffId?: string;
+        branchId: string;
     }): Promise<{
         customer: {
             name: string;
@@ -26,6 +27,7 @@ export declare const orderService: {
         items: never;
     } & {
         id: string;
+        branchId: string;
         createdAt: Date;
         updatedAt: Date;
         orderNumber: string;

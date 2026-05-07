@@ -10,6 +10,7 @@ export const orderService = {
     orderType: OrderType;
     paymentMethod: PaymentMethod;
     staffId?: string;
+    branchId: string;
   }) {
     return prisma.$transaction(async (tx) => {
       // 1. Calculate total and verify stock
@@ -17,18 +18,19 @@ export const orderService = {
       const productUpdates = [];
 
       for (const item of data.items) {
-        const product = await tx.product.findUniqueOrThrow({
-          where: { id: item.productId }
+        const branchStock = await tx.branchStock.findUnique({
+          where: { branchId_productId: { branchId: data.branchId, productId: item.productId } },
+          include: { product: true }
         });
         
-        if (product.stockQty < item.quantity) {
-          throw new Error(`Insufficient stock for product ${product.name}`);
+        if (!branchStock || branchStock.stockQty < item.quantity) {
+          throw new Error(`Insufficient stock for product ${branchStock?.product?.name || item.productId} in this branch`);
         }
         
-        totalAmount += product.price * item.quantity;
+        totalAmount += branchStock.product.price * item.quantity;
         productUpdates.push({
           ...item,
-          unitPrice: product.price
+          unitPrice: branchStock.product.price
         });
       }
 
@@ -46,6 +48,7 @@ export const orderService = {
           paymentMethod: data.paymentMethod,
           paymentStatus: data.paymentMethod === 'CASH' ? PaymentStatus.PAID : PaymentStatus.PENDING,
           staffId: data.staffId,
+          branchId: data.branchId,
           items: {
             create: productUpdates.map(item => ({
               productId: item.productId,
@@ -59,7 +62,7 @@ export const orderService = {
 
       // 4. Decrement stock for each item (atomic within transaction)
       for (const item of productUpdates) {
-        await inventoryService.decrementStock(tx, item.productId, item.quantity);
+        await inventoryService.decrementStock(tx, item.productId, item.quantity, data.branchId);
       }
 
       // 5. Queue async notifications (non-blocking)
