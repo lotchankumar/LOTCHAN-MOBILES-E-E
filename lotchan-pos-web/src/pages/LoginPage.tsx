@@ -341,7 +341,7 @@ export const LoginPage = () => {
       {/* Footer */}
       <footer className="w-full py-8 flex flex-col md:flex-row justify-between items-center px-8 gap-4 bg-[#071A2F] border-t border-white/5 text-xs font-medium uppercase tracking-widest relative z-10">
         <div className="text-slate-500">
-          © 2024 LOTCHAN MOBILES. PERFORMANCE TUNED.
+          © 2026 LOTCHAN MOBILES. PERFORMANCE TUNED.
         </div>
         <div className="flex gap-6">
           <a className="text-slate-500 hover:text-blue-400 transition-colors opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
