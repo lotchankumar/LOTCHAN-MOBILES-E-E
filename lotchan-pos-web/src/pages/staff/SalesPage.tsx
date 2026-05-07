@@ -1,43 +1,66 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
-import { staffService, type Product, type SaleItem } from '../../services/staff.service';
-import { Trash2, Search, X } from 'lucide-react';
+import { staffService, type Product, type SaleItem, type Repair } from '../../services/staff.service';
+import {
+  Search, X, ShoppingCart, Wrench, Clock, History, Trash2,
+  Smartphone, Cable, Cpu, Package, CardSim, MessageCircle, CheckCircle,
+  Plus, Minus, LogOut
+} from 'lucide-react';
 
 export const SalesPage = () => {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Products state
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [inStockOnly, setInStockOnly] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  
+
   // Cart state
   const [cart, setCart] = useState<Array<SaleItem & { product: Product }>>([]);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI'>('CASH');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Repairs state
+  const [repairs, setRepairs] = useState<Repair[]>([]);
+  const [repairsLoading, setRepairsLoading] = useState(false);
+
+  // Sidebar active view
+  const [activeView, setActiveView] = useState('cart');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // Close profile menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const categories = [
     { label: 'All', value: 'All' },
-    { label: 'ACCESSORIES', value: 'ACCESSORY' },
-    { label: 'MOBILES', value: 'MOBILE' },
-    { label: 'SIM', value: 'SIM_CARD' }
+    { label: 'Accessories', value: 'ACCESSORY' },
+    { label: 'Mobiles', value: 'MOBILE' },
+    { label: 'SIM', value: 'SIM_CARD' },
   ];
 
-  useEffect(() => {
-    fetchProducts();
-  }, [selectedCategory]);
-
-  // Apply search and filter logic when products or filters change
-  useEffect(() => {
-    applyFilters();
-  }, [products, searchQuery, minPrice, maxPrice, inStockOnly]);
+  // ------ Fetch Data ------
+  useEffect(() => { fetchProducts(); }, [selectedCategory]);
+  useEffect(() => { applyFilters(); }, [products, searchQuery]);
+  useEffect(() => { fetchRepairs(); }, []);
 
   const fetchProducts = async () => {
     try {
@@ -53,111 +76,88 @@ export const SalesPage = () => {
     }
   };
 
+  const fetchRepairs = async () => {
+    try {
+      setRepairsLoading(true);
+      const data = await staffService.getRepairs();
+      setRepairs(data);
+    } catch (err: any) {
+      console.error('Failed to fetch repairs:', err);
+    } finally {
+      setRepairsLoading(false);
+    }
+  };
+
   const applyFilters = () => {
     let filtered = products;
-
-    // Apply search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(query) ||
-        product.description?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query)
       );
     }
-
-    // Apply price range filter
-    if (minPrice || maxPrice) {
-      const min = minPrice ? parseFloat(minPrice) : 0;
-      const max = maxPrice ? parseFloat(maxPrice) : Infinity;
-      filtered = filtered.filter(product => product.price >= min && product.price <= max);
-    }
-
-    // Apply stock availability filter
-    if (inStockOnly) {
-      filtered = filtered.filter(product => product.stockQty > 0);
-    }
-
     setFilteredProducts(filtered);
   };
 
-  const clearFilters = () => {
-    setSearchQuery('');
-    setMinPrice('');
-    setMaxPrice('');
-    setInStockOnly(false);
-  };
-
-  const hasActiveFilters = searchQuery || minPrice || maxPrice || inStockOnly;
-
+  // ------ Cart logic ------
   const addToCart = (product: Product) => {
-    const existingItem = cart.find(item => item.productId === product.id);
-    
-    if (existingItem) {
-      // Increase quantity if already in cart
-      if (existingItem.quantity < product.stockQty) {
-        setCart(cart.map(item =>
-          item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        ));
+    const existing = cart.find((i) => i.productId === product.id);
+    if (existing) {
+      if (existing.quantity < product.stockQty) {
+        setCart(
+          cart.map((i) =>
+            i.productId === product.id ? { ...i, quantity: i.quantity + 1 } : i
+          )
+        );
       }
-    } else {
-      // Add new item to cart
-      if (product.stockQty > 0) {
-        const newItem: SaleItem & { product: Product } = {
-          productId: product.id,
-          product,
-          quantity: 1,
-          price: product.price
-        };
-        setCart([...cart, newItem]);
-      }
+    } else if (product.stockQty > 0) {
+      setCart([
+        ...cart,
+        { productId: product.id, product, quantity: 1, price: product.price },
+      ]);
     }
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     if (product && quantity >= 1 && quantity <= product.stockQty) {
-      setCart(cart.map(item =>
-        item.productId === productId
-          ? { ...item, quantity }
-          : item
-      ));
+      setCart(
+        cart.map((i) => (i.productId === productId ? { ...i, quantity } : i))
+      );
     }
   };
 
   const removeFromCart = (productId: string) => {
-    setCart(cart.filter(item => item.productId !== productId));
+    setCart(cart.filter((i) => i.productId !== productId));
   };
 
-  const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
+  const clearCart = () => setCart([]);
+
+  const getSubtotal = () =>
+    cart.reduce((t, i) => t + i.price * i.quantity, 0);
+
+  const getTax = () => getSubtotal() * 0; // No tax for now
+  const getTotal = () => getSubtotal() + getTax();
 
   const handleCompleteSale = async () => {
     if (cart.length === 0 || !user) return;
-    
     try {
       setIsProcessing(true);
-      const saleData = {
-        items: cart.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price
+      await staffService.createSale({
+        items: cart.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+          price: i.price,
         })),
         paymentMethod,
-        totalAmount: getTotalAmount(),
-        staffId: user.id
-      };
-
-      await staffService.createSale(saleData);
-      
-      // Clear cart and show success
+        totalAmount: getTotal(),
+        staffId: user.id,
+      });
       setCart([]);
       setError(null);
       alert('Sale completed successfully!');
-      
-      // Refresh products to update stock
       fetchProducts();
     } catch (err: any) {
       setError(err.message || 'Failed to complete sale');
@@ -166,281 +166,530 @@ export const SalesPage = () => {
     }
   };
 
+  // ------ Repairs helpers ------
+  const handleShareWhatsApp = (repair: Repair) => {
+    const text = `Hi ${repair.customerName},\n\nYour repair ticket (Device: ${repair.deviceModel}) is currently: ${repair.status}.\nEstimated Cost: ₹${repair.estimatedCost.toFixed(2)}.\n\nThank you for choosing LOTCHAN MOBILES!`;
+    const url = `https://wa.me/${repair.customerPhone}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleFinalBilling = async (repairId: string, estimatedCost: number) => {
+    const actualCostStr = prompt(
+      `Enter final billing amount (Estimated: ₹${estimatedCost}):`,
+      estimatedCost.toString()
+    );
+    if (actualCostStr && !isNaN(parseFloat(actualCostStr))) {
+      try {
+        await staffService.updateRepairStatus(repairId, 'DELIVERED', parseFloat(actualCostStr));
+        fetchRepairs();
+        alert('Repair marked as DELIVERED and final billing recorded.');
+      } catch (err: any) {
+        setError(err.message || 'Failed to complete final billing');
+      }
+    }
+  };
+
+  const getRepairBorderClass = (status: string) => {
+    switch (status) {
+      case 'PENDING': return 'staff-repair-yellow';
+      case 'IN_PROGRESS': return 'staff-repair-blue';
+      case 'COMPLETED': return 'staff-repair-green';
+      case 'DELIVERED': return 'staff-repair-cyan';
+      default: return 'staff-repair-blue';
+    }
+  };
+
+  const getRepairBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING': return { cls: 'staff-badge-yellow', label: 'Pending' };
+      case 'IN_PROGRESS': return { cls: 'staff-badge-blue', label: 'In Progress' };
+      case 'COMPLETED': return { cls: 'staff-badge-green', label: 'Completed' };
+      case 'DELIVERED': return { cls: 'staff-badge-purple', label: 'Delivered' };
+      default: return { cls: 'staff-badge-blue', label: status };
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'MOBILE': return <Smartphone className="w-5 h-5" />;
+      case 'ACCESSORY': return <Cable className="w-5 h-5" />;
+      case 'SIM_CARD': return <CardSim className="w-5 h-5" />;
+      default: return <Package className="w-5 h-5" />;
+    }
+  };
+
+  const txnId = `TXN-${Date.now().toString().slice(-6)}`;
+
+  const sideNavItems = [
+    { id: 'cart', icon: <ShoppingCart className="w-5 h-5" />, label: 'Active Cart' },
+    { id: 'repairs', icon: <Wrench className="w-5 h-5" />, label: 'Work Orders' },
+    { id: 'parts', icon: <Cpu className="w-5 h-5" />, label: 'Parts Queue' },
+    { id: 'history', icon: <History className="w-5 h-5" />, label: 'History' },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-foreground">Sales Dashboard</h1>
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-muted-foreground">
-            Cart: {cart.length} items | Total: ₹{getTotalAmount().toFixed(2)}
-          </div>
+    <div className="staff-theme">
+      {/* ===== TOP NAV BAR ===== */}
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 staff-topnav">
+        <div className="flex items-center gap-8">
+          <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+            Lotchan Mobiles
+          </span>
+          <nav className="hidden md:flex gap-6 items-center">
+            <span className="text-xs font-medium text-blue-400 border-b-2 border-blue-500 pb-1 cursor-default">
+              Dashboard
+            </span>
+            {['Inventory', 'Repairs', 'Customers'].map((tab) => (
+              <span
+                key={tab}
+                className="text-xs font-medium text-slate-400 hover:text-blue-300 transition-colors cursor-pointer"
+              >
+                {tab}
+              </span>
+            ))}
+          </nav>
         </div>
-      </div>
-
-      {/* Category Filter */}
-      <div className="flex space-x-2 overflow-x-auto pb-2">
-        {categories.map(category => (
-          <button
-            key={category.value}
-            onClick={() => setSelectedCategory(category.value)}
-            className={`px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap ${
-              selectedCategory === category.value
-                ? 'btn-primary'
-                : 'btn-secondary'
-            }`}
-          >
-            {category.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Search and Filter Section */}
-      <div className="card p-4">
-        <div className="flex gap-3 items-end flex-wrap">
-          {/* Search Bar */}
-          <div className="flex-1 min-w-64">
-            <label className="block text-sm font-medium text-muted-foreground mb-2">Search Products</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search by name or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-field pl-10 w-full"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="relative hidden lg:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <input
+              className="staff-search rounded-full pl-10 pr-4 py-1.5 text-sm w-64"
+              placeholder="Global search..."
+              type="text"
+            />
           </div>
-
-          {/* Filter Toggle Button */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              showFilters || hasActiveFilters
-                ? 'btn-primary'
-                : 'btn-secondary'
-            }`}
-          >
-            Filters {hasActiveFilters && '●'}
-          </button>
-        </div>
-
-        {/* Expandable Filters */}
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Price Range Filter */}
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Min Price</label>
-              <input
-                type="number"
-                placeholder="₹ Min"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="input-field w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Max Price</label>
-              <input
-                type="number"
-                placeholder="₹ Max"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="input-field w-full"
-              />
-            </div>
-
-            {/* Stock Availability Filter */}
-            <div className="flex items-end">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={inStockOnly}
-                  onChange={(e) => setInStockOnly(e.target.checked)}
-                  className="w-4 h-4 rounded border-border"
-                />
-                <span className="text-sm font-medium text-foreground">In Stock Only</span>
-              </label>
-            </div>
-
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <div className="md:col-span-3 flex justify-end">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-400">Welcome,</span>
+            <span className="text-sm font-medium text-blue-300">{user?.email}</span>
+          </div>
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="h-8 w-8 rounded-full border border-blue-500/30 overflow-hidden bg-[#0c2b49] flex items-center justify-center hover:border-blue-400 transition-colors cursor-pointer"
+            >
+              <span className="text-xs font-bold text-blue-400">
+                {user?.email?.charAt(0).toUpperCase() || 'S'}
+              </span>
+            </button>
+            {showProfileMenu && (
+              <div className="absolute right-0 top-10 w-56 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#0a1e36]/95 backdrop-blur-xl z-50 staff-fade-in">
+                <div className="px-4 py-3 border-b border-white/5">
+                  <p className="text-xs text-slate-400">Signed in as</p>
+                  <p className="text-sm font-medium text-blue-300 truncate mt-0.5">{user?.email}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">{user?.role}</p>
+                </div>
                 <button
-                  onClick={clearFilters}
-                  className="px-4 py-2 text-sm font-medium rounded-md btn-secondary hover:bg-secondary/80"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
                 >
-                  Clear All Filters
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
                 </button>
               </div>
             )}
           </div>
-        )}
+        </div>
+      </header>
 
-        {/* Filter Results Summary */}
-        {hasActiveFilters && (
-          <div className="mt-3 pt-3 border-t border-border">
-            <p className="text-xs text-muted-foreground">
-              Showing {filteredProducts.length} of {products.length} products
-            </p>
+      {/* ===== SIDE NAV BAR ===== */}
+      <aside className="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flex flex-col z-40 staff-sidenav">
+        <div className="p-6">
+          <h2 className="text-lg font-semibold text-[#d2e4ff]">Order Hub</h2>
+          <p className="text-[10px] uppercase tracking-widest text-slate-500">
+            Sales Staff
+          </p>
+        </div>
+        <nav className="flex-1 px-4 space-y-2">
+          {sideNavItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-300 ${
+                activeView === item.id
+                  ? 'staff-nav-active'
+                  : 'staff-nav-link'
+              }`}
+            >
+              {item.icon}
+              <span className="text-xs font-medium">{item.label}</span>
+              {item.id === 'cart' && cart.length > 0 && (
+                <span className="ml-auto text-[10px] font-bold bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                  {cart.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4">
+          <button
+            onClick={handleCompleteSale}
+            disabled={isProcessing || cart.length === 0}
+            className="w-full py-3 staff-cta rounded-lg text-sm disabled:opacity-40"
+          >
+            {isProcessing ? 'Processing...' : 'Complete Transaction'}
+          </button>
+        </div>
+      </aside>
+
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="ml-64 mt-16 p-6 min-h-[calc(100vh-64px)]">
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-900/30 border border-red-500/30 text-red-300 text-sm flex items-center justify-between staff-fade-in">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-200">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
-      </div>
 
-      {/* Error Alert */}
-      {error && (
-        <div className="rounded-md bg-destructive/10 border border-destructive/30 p-4">
-          <div className="text-sm text-destructive">{error}</div>
+        {/* Search & Command Bar */}
+        <div className="staff-glass p-4 rounded-xl flex items-center justify-between mb-6 staff-fade-in">
+          <div className="flex-1 max-w-2xl flex items-center gap-4">
+            <Search className="text-blue-400 w-5 h-5 flex-shrink-0" />
+            <input
+              className="w-full bg-transparent border-none text-[#d2e4ff] placeholder:text-slate-500 focus:outline-none text-base"
+              placeholder="Scan barcode or type to search products, IMEI..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              type="text"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <div className="hidden md:flex gap-2">
+            <span className="staff-kbd">F1 - Quick Search</span>
+            <span className="staff-kbd">F2 - New Ticket</span>
+          </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Product Grid */}
-        <div className="lg:col-span-2">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-muted-foreground">Loading products...</div>
+        {/* 3-COLUMN GRID */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* ===== LEFT: Quick Sale ===== */}
+          <section className="col-span-12 lg:col-span-5 space-y-5 staff-fade-in" style={{ animationDelay: '0.1s' }}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#d2e4ff]">Quick Sale</h3>
+              <span className="text-xs text-slate-500">
+                {filteredProducts.length} products
+              </span>
             </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {hasActiveFilters ? 'No products match your search and filters' : 'No products found'}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProducts.map(product => (
-                <div
-                  key={product.id}
-                  className="card hover:shadow-md transition-shadow p-4"
+
+            {/* Category chips */}
+            <div className="flex gap-2 flex-wrap">
+              {categories.map((cat) => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`staff-chip ${
+                    selectedCategory === cat.value
+                      ? 'staff-chip-active'
+                      : 'staff-chip-inactive'
+                  }`}
                 >
-                  <div className="space-y-3">
-                    <h3 className="font-medium text-foreground">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-primary">₹{product.price.toFixed(2)}</span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        product.stockQty > 0
-                          ? 'bg-success/20 text-success'
-                          : 'bg-destructive/20 text-destructive'
-                      }`}>
-                        Stock: {product.stockQty}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => addToCart(product)}
-                      disabled={product.stockQty === 0}
-                      className={`w-full py-2 px-4 rounded-md text-sm font-medium ${
-                        product.stockQty > 0
-                          ? 'btn-primary'
-                          : 'bg-secondary text-muted-foreground cursor-not-allowed'
-                      }`}
-                    >
-                      {product.stockQty > 0 ? 'Add to Cart' : 'Out of Stock'}
-                    </button>
-                  </div>
-                </div>
+                  {cat.label}
+                </button>
               ))}
             </div>
-          )}
-        </div>
 
-        {/* Cart Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="card p-4">
-            <h2 className="text-lg font-bold text-foreground mb-4">Shopping Cart</h2>
-            
-            {cart.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Your cart is empty</p>
+            {/* Product Grid */}
+            {loading ? (
+              <div className="flex items-center justify-center h-48">
+                <div className="text-slate-500 staff-pulse">Loading products...</div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex items-center justify-center h-48 staff-glass rounded-xl">
+                <p className="text-slate-500">No products found</p>
+              </div>
             ) : (
-              <>
-                <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
-                  {cart.map(item => (
-                    <div key={item.productId} className="flex items-center justify-between border-b border-border pb-3">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-foreground">{item.product.name}</h4>
-                        <div className="flex items-center space-x-4 mt-1">
-                          <div className="flex items-center space-x-2">
+              <div className="grid grid-cols-2 gap-4 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="staff-product-card p-4 space-y-3"
+                    onClick={() => addToCart(product)}
+                  >
+                    {/* Icon + stock badge */}
+                    <div className="flex items-center justify-between">
+                      <div className="h-10 w-10 rounded-lg bg-[#0c2b49] flex items-center justify-center text-blue-400">
+                        {getCategoryIcon(product.category)}
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          product.stockQty > 0
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-red-900/50 text-red-300'
+                        }`}
+                      >
+                        {product.stockQty > 0
+                          ? `${product.stockQty} IN STOCK`
+                          : 'OUT OF STOCK'}
+                      </span>
+                    </div>
+                    {/* Info */}
+                    <div>
+                      <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                        {product.category === 'SIM_CARD'
+                          ? 'SIM Cards'
+                          : product.category === 'MOBILE'
+                          ? 'Smartphones'
+                          : 'Accessories'}
+                      </p>
+                      <p className="text-sm font-semibold text-[#d2e4ff] truncate mt-0.5">
+                        {product.name}
+                      </p>
+                      {product.description && (
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                          {product.description}
+                        </p>
+                      )}
+                    </div>
+                    {/* Price + Add */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold text-blue-400">
+                        ₹{product.price.toFixed(2)}
+                      </span>
+                      <button
+                        className={`p-2 rounded-full transition-all ${
+                          product.stockQty > 0
+                            ? 'bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white'
+                            : 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                        }`}
+                        disabled={product.stockQty === 0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(product);
+                        }}
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* ===== MIDDLE: Service Desk (Repairs) ===== */}
+          <section className="col-span-12 lg:col-span-4 space-y-5 staff-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#d2e4ff]">Service Desk</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchRepairs}
+                  className="p-1.5 rounded-md bg-[#00213d] text-slate-400 hover:text-blue-400 transition-colors"
+                  title="Refresh repairs"
+                >
+                  <Clock className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+              {repairsLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <div className="text-slate-500 staff-pulse">Loading repairs...</div>
+                </div>
+              ) : repairs.length === 0 ? (
+                <div className="staff-glass rounded-xl p-8 text-center">
+                  <Wrench className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-500 text-sm">No repair tickets found</p>
+                </div>
+              ) : (
+                repairs.map((repair) => {
+                  const badge = getRepairBadge(repair.status);
+                  return (
+                    <div
+                      key={repair.id}
+                      className={`staff-glass p-4 rounded-xl ${getRepairBorderClass(repair.status)}`}
+                    >
+                      {/* Header */}
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className={`staff-badge ${badge.cls}`}>
+                            {badge.label}
+                          </span>
+                          <h4 className="text-sm font-bold text-[#d2e4ff] mt-1">
+                            {repair.deviceModel} — {repair.deviceType}
+                          </h4>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-500">
+                          #{repair.id.slice(-6).toUpperCase()}
+                        </span>
+                      </div>
+                      {/* Customer */}
+                      <p className="text-xs text-slate-400 mb-3">
+                        Customer: {repair.customerName} • {repair.customerPhone}
+                      </p>
+                      {/* Complaint */}
+                      <p className="text-xs text-slate-500 mb-3 line-clamp-2">
+                        {repair.complaint}
+                      </p>
+                      {/* Cost info */}
+                      <div className="flex items-center gap-3 mb-3 text-xs">
+                        <span className="text-slate-400">
+                          Est: <span className="text-[#d2e4ff] font-medium">₹{repair.estimatedCost.toFixed(2)}</span>
+                        </span>
+                        {repair.actualCost && (
+                          <span className="text-green-400">
+                            Paid: ₹{repair.actualCost.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      {/* Progress for in-progress */}
+                      {repair.status === 'IN_PROGRESS' && (
+                        <div className="staff-progress-track mb-3">
+                          <div className="staff-progress-fill" style={{ width: '50%' }} />
+                        </div>
+                      )}
+                      {/* Actions */}
+                      <div className="flex justify-between items-center">
+                        <button
+                          onClick={() => handleShareWhatsApp(repair)}
+                          className="staff-action-btn flex items-center gap-1"
+                        >
+                          <MessageCircle className="w-3 h-3" /> Notify
+                        </button>
+                        {repair.status === 'COMPLETED' && (
+                          <button
+                            onClick={() => handleFinalBilling(repair.id, repair.estimatedCost)}
+                            className="staff-action-btn flex items-center gap-1 !text-green-400 !border-green-500/30"
+                          >
+                            <CheckCircle className="w-3 h-3" /> Final Billing
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          {/* ===== RIGHT: Active Order (Cart) ===== */}
+          <section className="col-span-12 lg:col-span-3 staff-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="staff-order-panel h-full flex flex-col">
+              {/* Header */}
+              <div className="p-5 border-b border-white/5">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-lg font-semibold text-[#d2e4ff]">Active Order</h3>
+                  {cart.length > 0 && (
+                    <button
+                      onClick={clearCart}
+                      className="text-slate-500 hover:text-red-400 transition-colors"
+                      title="Clear cart"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Transaction ID: #{txnId}
+                </p>
+              </div>
+
+              {/* Items */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {cart.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                    <ShoppingCart className="w-10 h-10 text-slate-600 mb-3" />
+                    <p className="text-slate-500 text-sm">Your cart is empty</p>
+                    <p className="text-slate-600 text-xs mt-1">Click a product to add it</p>
+                  </div>
+                ) : (
+                  cart.map((item) => (
+                    <div key={item.productId} className="flex gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-[#1a3654] flex-shrink-0 flex items-center justify-center text-blue-400">
+                        {getCategoryIcon(item.product.category)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <h5 className="text-sm font-semibold text-[#d2e4ff] truncate pr-2">
+                            {item.product.name}
+                          </h5>
+                          <button
+                            onClick={() => removeFromCart(item.productId)}
+                            className="text-slate-600 hover:text-red-400 transition-colors flex-shrink-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          {/* Quantity controls */}
+                          <div className="flex items-center gap-2">
                             <button
+                              className="staff-qty-btn"
                               onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                               disabled={item.quantity <= 1}
-                              className="w-6 h-6 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 disabled:opacity-50"
                             >
-                              -
+                              <Minus className="w-3 h-3" />
                             </button>
-                            <span className="w-8 text-center text-foreground">{item.quantity}</span>
+                            <span className="text-xs font-medium text-[#d2e4ff] w-5 text-center">
+                              {item.quantity}
+                            </span>
                             <button
+                              className="staff-qty-btn"
                               onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                               disabled={item.quantity >= item.product.stockQty}
-                              className="w-6 h-6 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 disabled:opacity-50"
                             >
-                              +
+                              <Plus className="w-3 h-3" />
                             </button>
                           </div>
-                          <span className="text-primary font-medium">
+                          <span className="text-sm font-medium text-[#d2e4ff]">
                             ₹{(item.price * item.quantity).toFixed(2)}
                           </span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(item.productId)}
-                        className="ml-2 text-destructive hover:text-destructive/80"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
                     </div>
+                  ))
+                )}
+              </div>
+
+              {/* Totals & Checkout */}
+              <div className="p-5 bg-[#001429]/40 border-t border-white/10 rounded-b-2xl space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Subtotal</span>
+                    <span className="text-[#d2e4ff]">₹{getSubtotal().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xl pt-2 border-t border-white/5">
+                    <span className="text-[#d2e4ff] font-semibold">Total</span>
+                    <span className="text-blue-400 font-bold">₹{getTotal().toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Payment methods */}
+                <div className="grid grid-cols-3 gap-2">
+                  {(['CASH', 'CARD', 'UPI'] as const).map((method) => (
+                    <button
+                      key={method}
+                      onClick={() => setPaymentMethod(method)}
+                      className={`staff-pay-btn ${
+                        paymentMethod === method
+                          ? 'staff-pay-active'
+                          : 'staff-pay-inactive'
+                      }`}
+                    >
+                      {method}
+                    </button>
                   ))}
                 </div>
 
-                {/* Payment Method */}
-                <div className="mb-6">
-                  <h3 className="font-medium text-foreground mb-2">Payment Method</h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['CASH', 'CARD', 'UPI'] as const).map(method => (
-                      <button
-                        key={method}
-                        onClick={() => setPaymentMethod(method)}
-                        className={`py-2 text-sm font-medium rounded-md ${
-                          paymentMethod === method
-                            ? 'btn-primary'
-                            : 'btn-secondary'
-                        }`}
-                      >
-                        {method}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className="border-t border-border pt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-bold text-foreground">Total Amount:</span>
-                    <span className="text-2xl font-bold text-primary-dark">₹{getTotalAmount().toFixed(2)}</span>
-                  </div>
-
-                  <button
-                    onClick={handleCompleteSale}
-                    disabled={isProcessing || cart.length === 0}
-                    className="btn-primary w-full py-3 px-4 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing ? 'Processing...' : 'Complete Sale'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+                {/* Complete button */}
+                <button
+                  onClick={handleCompleteSale}
+                  disabled={isProcessing || cart.length === 0}
+                  className="w-full py-4 staff-cta rounded-xl text-base"
+                >
+                  {isProcessing ? 'PROCESSING...' : 'COMPLETE TRANSACTION'}
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

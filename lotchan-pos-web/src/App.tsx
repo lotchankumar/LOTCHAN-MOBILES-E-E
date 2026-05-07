@@ -26,7 +26,6 @@ import { StaffLayout } from './pages/staff/StaffLayout';
 import { SalesPage } from './pages/staff/SalesPage';
 import { ShiftPage } from './pages/staff/ShiftPage';
 import { StaffRepairsPage } from './pages/staff/StaffRepairsPage';
-import { StaffDashboard } from './pages/staff/StaffDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuthStore } from './store/auth.store';
 import { UserRole } from './types';
@@ -113,7 +112,7 @@ function App() {
           <Route path="sales" element={<SalesPage />} />
           <Route path="shift" element={<ShiftPage />} />
           <Route path="repairs" element={<StaffRepairsPage />} />
-          <Route index element={<StaffDashboard />} />
+          <Route index element={<Navigate to="sales" replace />} />
         </Route>
         <Route 
           path="/technician" 
