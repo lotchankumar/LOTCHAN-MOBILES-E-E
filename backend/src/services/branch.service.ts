@@ -5,12 +5,14 @@ export type CreateBranchData = {
   name: string;
   address?: string;
   phone?: string;
+  isActive?: boolean;
 };
 
 export type UpdateBranchData = {
   name?: string;
   address?: string;
   phone?: string;
+  isActive?: boolean;
 };
 
 export const branchService = {

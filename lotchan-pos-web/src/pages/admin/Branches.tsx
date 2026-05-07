@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/auth.store';
 import { UserRole } from '../../types';
 import type { BranchWithCount } from '../../hooks/useManagers';
 import { useBranchesQuery, useCreateBranch, useUpdateBranch, useDeleteBranch } from '../../hooks/useManagers';
-import { Plus, Edit3, Trash2, ChevronDown, XCircle, AlertCircle } from 'lucide-react';
+import { Plus, Edit3, Trash2, ChevronDown, XCircle, AlertCircle, Power, CheckCircle } from 'lucide-react';
 import { BackButton } from '../../components/BackButton';
 
 const BranchesPage = () => {
@@ -19,13 +19,14 @@ const BranchesPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
-    phone: ''
+    phone: '',
+    isActive: true
   });
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmActionId, setConfirmActionId] = useState('');
 
   const openAddModal = () => {
-    setFormData({ name: '', address: '', phone: '' });
+    setFormData({ name: '', address: '', phone: '', isActive: true });
     setEditMode(false);
     setEditingBranch(null);
     setShowModal(true);
@@ -35,7 +36,8 @@ const BranchesPage = () => {
     setFormData({
       name: branch.name,
       address: branch.address || '',
-      phone: branch.phone || ''
+      phone: branch.phone || '',
+      isActive: branch.isActive
     });
     setEditMode(true);
     setEditingBranch(branch);
@@ -59,6 +61,14 @@ const BranchesPage = () => {
   const handleDeleteConfirm = (id: string) => {
     setConfirmActionId(id);
     setShowConfirm(true);
+  };
+
+  const handleToggleStatus = async (branch: BranchWithCount) => {
+    try {
+      await updateBranchMutation(branch.id, { isActive: !branch.isActive }, refetchBranches);
+    } catch (err) {
+      // Error handled in mutation
+    }
   };
 
   const confirmDelete = async () => {
@@ -104,6 +114,7 @@ const BranchesPage = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Phone</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Staff Count</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Orders Count</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Created</th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-[#7892b7] uppercase tracking-wider">Actions</th>
                 </tr>
@@ -129,11 +140,23 @@ const BranchesPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch.phone || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.users || 0}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.orders || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${branch.isActive ? 'bg-green-100/10 text-green-400' : 'bg-red-100/10 text-red-400'}`}>
+                          {branch.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#7892b7]">
                         {new Date(branch.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div className="flex items-center justify-center gap-3">
+                          <button
+                            onClick={() => handleToggleStatus(branch)}
+                            className={`${branch.isActive ? 'text-green-400 hover:text-green-300' : 'text-red-400 hover:text-red-300'} transition-colors`}
+                            title={branch.isActive ? 'Deactivate' : 'Activate'}
+                          >
+                            <Power className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => openEditModal(branch)}
                             className="text-[#aec8f0] hover:text-white transition-colors"
@@ -211,6 +234,18 @@ const BranchesPage = () => {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-white/10 rounded-md bg-[#0b2a4a] text-[#d2e4ff] focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
+              </div>
+              <div className="flex items-center space-x-2 pt-2">
+                <input
+                  id="isActive"
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="w-4 h-4 rounded border-white/10 bg-[#0b2a4a] text-[#aec8f0] focus:ring-ring focus:ring-offset-0 focus:ring-offset-transparent"
+                />
+                <label htmlFor="isActive" className="text-sm font-medium text-[#7892b7]">
+                  Branch is active
+                </label>
               </div>
               <div className="flex space-x-3 pt-4">
                 <button
