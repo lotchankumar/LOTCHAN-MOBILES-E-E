@@ -102,9 +102,11 @@ export const purchaseOrderService = {
     if (!po) throw new AppError('Purchase order not found', 404);
     if (po.status === 'RECEIVED') throw new AppError('Purchase order already received', 400);
 
+    if (!po.branchId) throw new AppError('Purchase order must be assigned to a branch to receive stock', 400);
+
     return prisma.$transaction(async (tx) => {
       for (const item of po.items) {
-        await inventoryService.incrementStock(tx, item.productId, item.quantity, {
+        await inventoryService.incrementStock(tx, item.productId, item.quantity, po.branchId!, {
           type: 'PURCHASE_RECEIVE',
           reference: `PO:${po.orderNumber}`,
           purchaseOrderId: po.id,

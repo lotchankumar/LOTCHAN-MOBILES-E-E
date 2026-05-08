@@ -18,7 +18,8 @@ export const repairController = {
         issueDescription,
         estimatedCost,
         advancePaid,
-        assignedToId
+        assignedToId,
+        branchId: req.body.branchId || user?.branchId
       });
       res.status(201).json(job);
     } catch (error) {

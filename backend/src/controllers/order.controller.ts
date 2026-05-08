@@ -17,7 +17,8 @@ export const orderController = {
         items,
         orderType: orderType as OrderType,
         paymentMethod: paymentMethod as PaymentMethod,
-        staffId
+        staffId,
+        branchId: req.body.branchId || user?.branchId
       });
       
       res.status(201).json(order);

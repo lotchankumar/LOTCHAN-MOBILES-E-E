@@ -8,6 +8,7 @@ const client_1 = __importDefault(require("../prisma/client"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const queue_service_1 = require("./queue.service");
 const error_middleware_1 = require("../middleware/error.middleware");
+const inventory_service_1 = require("./inventory.service");
 const generateRandomPassword = () => {
     return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase().slice(0, 4);
 };
@@ -355,6 +356,110 @@ const managerService = {
             actualClosingBalance: expectedClosing,
             variance: 0,
             cashSessions: [],
+        };
+    },
+    async getDashboardStats(branchId) {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        const targetBranchId = (branchId && branchId !== 'all') ? branchId : undefined;
+        // 1. Sales & Profit MTD
+        const profitData = await this.getProfit(branchId, startOfMonth, endOfMonth);
+        // Get staff IDs in this branch for orders/repairs filtering
+        const userWhere = {};
+        if (targetBranchId)
+            userWhere.branchId = targetBranchId;
+        const staffIds = (await client_1.default.user.findMany({ where: userWhere, select: { id: true } })).map(u => u.id);
+        const mtdOrders = await client_1.default.order.aggregate({
+            where: {
+                status: 'COMPLETED',
+                createdAt: { gte: new Date(startOfMonth + 'T00:00:00.000Z') },
+                staffId: { in: staffIds }
+            },
+            _sum: { totalAmount: true }
+        });
+        const salesMtd = mtdOrders._sum.totalAmount || 0;
+        // 2. GST Liabilities (Proxy: Unpaid purchases)
+        const unpaidPurchases = await client_1.default.purchase.aggregate({
+            where: {
+                ...(targetBranchId && { branchId: targetBranchId })
+            },
+            _sum: { totalAmount: true, paidAmount: true }
+        });
+        const liabilities = (unpaidPurchases._sum.totalAmount || 0) - (unpaidPurchases._sum.paidAmount || 0);
+        // 3. Stock Valuation & Breakdown
+        const stockValuation = await inventory_service_1.inventoryService.getStockValuation('category', targetBranchId);
+        // 4. Critical Low Stock
+        const lowStockRaw = await inventory_service_1.inventoryService.getLowStockProducts(targetBranchId);
+        const lowStock = lowStockRaw.slice(0, 5).map((p) => ({
+            id: p.id,
+            name: p.name,
+            stockQty: p.stockQty,
+            minStock: p.minStock
+        }));
+        // 5. Supplier Orders (Recent SENT or PARTIALLY_RECEIVED)
+        const supplierOrdersRaw = await client_1.default.purchaseOrder.findMany({
+            where: {
+                status: { in: ['SENT', 'PARTIALLY_RECEIVED'] },
+                ...(targetBranchId && { branchId: targetBranchId })
+            },
+            include: { supplier: { select: { name: true } } },
+            orderBy: { createdAt: 'desc' },
+            take: 5
+        });
+        const supplierOrders = supplierOrdersRaw.map(po => ({
+            id: po.id,
+            supplierName: po.supplier.name,
+            status: po.status
+        }));
+        // 6. User Controls
+        const usersRaw = await client_1.default.user.findMany({
+            where: {
+                role: { in: ['MANAGER', 'ADMIN'] },
+                ...(targetBranchId && { branchId: targetBranchId })
+            },
+            include: { branch: { select: { name: true } } },
+            take: 5
+        });
+        const users = usersRaw.map(u => ({
+            id: u.id,
+            name: u.name,
+            role: u.role,
+            branchName: u.branch?.name || 'Global',
+            initials: u.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+        }));
+        // 7. Technician Performance (MTD completed repairs)
+        const repairsMTD = await client_1.default.repairJob.findMany({
+            where: {
+                status: { in: ['COMPLETED', 'DELIVERED'] },
+                createdAt: { gte: new Date(startOfMonth + 'T00:00:00.000Z') },
+                assignedToId: { in: staffIds }
+            },
+            include: { repairCategory: true }
+        });
+        const techDataMap = {};
+        for (const r of repairsMTD) {
+            const catName = r.repairCategory?.name?.toUpperCase() || 'GENERAL';
+            techDataMap[catName] = (techDataMap[catName] || 0) + 1;
+        }
+        let technicianPerformance = Object.entries(techDataMap).map(([name, value]) => ({ name, value }));
+        if (technicianPerformance.length === 0) {
+            technicianPerformance = [
+                { name: 'REPAIRS', value: 0 },
+                { name: 'SOFTWARE', value: 0 },
+                { name: 'HARDWARE', value: 0 },
+                { name: 'EXCHANGE', value: 0 }
+            ];
+        }
+        return {
+            salesMtd,
+            profitMtd: profitData.totalProfit,
+            liabilities,
+            stockValuation,
+            lowStock,
+            supplierOrders,
+            users,
+            technicianPerformance
         };
     }
 };

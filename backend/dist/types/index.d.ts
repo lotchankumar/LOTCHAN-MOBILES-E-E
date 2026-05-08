@@ -12,12 +12,6 @@ export interface User {
     role: UserRole;
     createdAt: Date;
 }
-export interface AuthRequest {
-    email: string;
-    password: string;
-    firstName?: string;
-    lastName?: string;
-}
 export interface AuthResponse {
     user: {
         id: string;
@@ -35,14 +29,6 @@ export interface JwtPayload {
     branchId?: string;
     iat?: number;
     exp?: number;
-}
-export interface AuthRequest extends Request {
-    user?: {
-        id: string;
-        email: string;
-        role: string;
-        branchId?: string;
-    };
 }
 export interface Branch {
     id: string;

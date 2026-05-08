@@ -166,6 +166,17 @@ exports.supplierService = {
                     paymentDate: data.paymentDate ? new Date(data.paymentDate) : new Date(),
                 },
             });
+            // Automatically create an expense for DEBIT payments
+            if (data.paymentType === 'DEBIT' && data.managerId) {
+                await tx.expense.create({
+                    data: {
+                        managerId: data.managerId,
+                        amount: data.amount,
+                        description: `Supplier Payment to ${supplier.name}` + (data.reference ? ` (Ref: ${data.reference})` : ''),
+                        expenseDate: data.paymentDate ? new Date(data.paymentDate) : new Date(),
+                    }
+                });
+            }
             return payment;
         });
     },

@@ -15,16 +15,17 @@ exports.orderService = {
             let totalAmount = 0;
             const productUpdates = [];
             for (const item of data.items) {
-                const product = await tx.product.findUniqueOrThrow({
-                    where: { id: item.productId }
+                const branchStock = await tx.branchStock.findUnique({
+                    where: { branchId_productId: { branchId: data.branchId, productId: item.productId } },
+                    include: { product: true }
                 });
-                if (product.stockQty < item.quantity) {
-                    throw new Error(`Insufficient stock for product ${product.name}`);
+                if (!branchStock || branchStock.stockQty < item.quantity) {
+                    throw new Error(`Insufficient stock for product ${branchStock?.product?.name || item.productId} in this branch`);
                 }
-                totalAmount += product.price * item.quantity;
+                totalAmount += branchStock.product.price * item.quantity;
                 productUpdates.push({
                     ...item,
-                    unitPrice: product.price
+                    unitPrice: branchStock.product.price
                 });
             }
             // 2. Generate order number
@@ -40,6 +41,7 @@ exports.orderService = {
                     paymentMethod: data.paymentMethod,
                     paymentStatus: data.paymentMethod === 'CASH' ? client_1.PaymentStatus.PAID : client_1.PaymentStatus.PENDING,
                     staffId: data.staffId,
+                    branchId: data.branchId,
                     items: {
                         create: productUpdates.map(item => ({
                             productId: item.productId,
@@ -52,7 +54,7 @@ exports.orderService = {
             });
             // 4. Decrement stock for each item (atomic within transaction)
             for (const item of productUpdates) {
-                await inventory_service_1.inventoryService.decrementStock(tx, item.productId, item.quantity);
+                await inventory_service_1.inventoryService.decrementStock(tx, item.productId, item.quantity, data.branchId);
             }
             // 5. Queue async notifications (non-blocking)
             await queue_service_1.queueService.addJob('sendOrderConfirmation', {

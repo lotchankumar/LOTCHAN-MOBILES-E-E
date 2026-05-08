@@ -12,8 +12,8 @@ const email_1 = require("../utils/email");
 // ==================== SEED ADMIN ====================
 const seedAdmin = async (req, res, next) => {
     try {
-        const email = "lotchansm1612@gmail.com";
-        const password = "MSLMlk$2402";
+        const email = process.env.ADMIN_EMAIL || "admin@example.com";
+        const password = process.env.ADMIN_PASSWORD || "admin123";
         const name = "Lotchan Mobiles";
         const hashedPassword = await bcryptjs_1.default.hash(password, 10);
         const admin = await client_1.default.user.upsert({

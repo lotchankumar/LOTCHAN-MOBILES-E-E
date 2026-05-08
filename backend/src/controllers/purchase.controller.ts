@@ -6,9 +6,9 @@ import { cacheService } from '../services/cache.service';
 export const purchaseController = {
   async createPurchase(req: Request, res: Response) {
     try {
-      const { managerId, supplier, invoiceNo, items, spareItems, supplierId, paidAmount, notes } = req.body;
+      const { managerId, supplier, invoiceNo, items, spareItems, supplierId, paidAmount, notes, branchId } = req.body;
 
-      if (!managerId || !supplier || !invoiceNo) {
+      if (!managerId || !supplier || !invoiceNo || !branchId) {
         throw new AppError('Missing required fields', 400);
       }
       
@@ -41,7 +41,6 @@ export const purchaseController = {
                   categoryId: item.categoryId || null,
                   price: item.sellingPrice || 0,
                   cost: item.unitCost || 0,
-                  stockQty: 0, // will be incremented below
                   supplierId: supplierId || null,
                 }
               });
@@ -68,6 +67,7 @@ export const purchaseController = {
               invoiceNo,
               totalAmount: productTotalAmount,
               paidAmount: paid,
+              branchId,
               items: {
                 create: processedItems.map((item: any) => ({
                   productId: item.productId,
@@ -91,19 +91,22 @@ export const purchaseController = {
           
           // Update stock for each item, and also update product selling price if provided
           for (const item of processedItems) {
-            const updateData: any = {
-              stockQty: { increment: item.quantity },
-            };
-            // Also set selling price and cost on the product if provided
-            if (item.sellingPrice && item.sellingPrice > 0) {
-              updateData.price = item.sellingPrice;
+            const updateProductData: any = {};
+            if (item.sellingPrice && item.sellingPrice > 0) updateProductData.price = item.sellingPrice;
+            if (item.unitCost && item.unitCost > 0) updateProductData.cost = item.unitCost;
+            
+            if (Object.keys(updateProductData).length > 0) {
+              await tx.product.update({
+                where: { id: item.productId },
+                data: updateProductData,
+              });
             }
-            if (item.unitCost && item.unitCost > 0) {
-              updateData.cost = item.unitCost;
-            }
-            await tx.product.update({
-              where: { id: item.productId },
-              data: updateData,
+
+            // Increment branch stock
+            await tx.branchStock.upsert({
+              where: { branchId_productId: { branchId, productId: item.productId } },
+              update: { stockQty: { increment: item.quantity } },
+              create: { branchId, productId: item.productId, stockQty: item.quantity }
             });
           }
         }
@@ -117,6 +120,7 @@ export const purchaseController = {
               invoiceNo,
               totalAmount: spareTotalAmount,
               notes: notes || null,
+              branchId,
               items: {
                 create: spareItems.map((item: any) => ({
                   spareProductId: item.spareProductId,
@@ -140,15 +144,17 @@ export const purchaseController = {
           
           // Update stock for each spare item
           for (const item of spareItems) {
-            const updateData: any = {
-              stockQty: { increment: item.quantity },
-            };
             if (item.sellingPrice && item.sellingPrice > 0) {
-              updateData.sellingPrice = item.sellingPrice;
+              await tx.repairSpareProduct.update({
+                where: { id: item.spareProductId },
+                data: { sellingPrice: item.sellingPrice },
+              });
             }
-            await tx.repairSpareProduct.update({
-              where: { id: item.spareProductId },
-              data: updateData,
+            // Increment branch spare stock
+            await tx.branchRepairSpareStock.upsert({
+              where: { branchId_spareProductId: { branchId, spareProductId: item.spareProductId } },
+              update: { stockQty: { increment: item.quantity } },
+              create: { branchId, spareProductId: item.spareProductId, stockQty: item.quantity }
             });
           }
         }

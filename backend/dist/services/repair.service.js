@@ -21,6 +21,7 @@ exports.repairService = {
                 estimatedCost: data.estimatedCost,
                 advancePaid: data.advancePaid || 0,
                 assignedToId: data.assignedToId,
+                branchId: data.branchId,
                 status: client_1.RepairStatus.RECEIVED
             },
             include: { customer: true }
@@ -35,9 +36,10 @@ exports.repairService = {
     },
     async usePartsInRepair(repairJobId, parts) {
         return client_2.default.$transaction(async (tx) => {
+            const job = await tx.repairJob.findUniqueOrThrow({ where: { id: repairJobId }, select: { branchId: true } });
             for (const part of parts) {
                 // Check stock and decrement atomically
-                await inventory_service_1.inventoryService.decrementStock(tx, part.productId, part.quantity);
+                await inventory_service_1.inventoryService.decrementStock(tx, part.productId, part.quantity, job.branchId);
                 const product = await tx.product.findUniqueOrThrow({ where: { id: part.productId } });
                 await tx.repairPart.create({
                     data: {

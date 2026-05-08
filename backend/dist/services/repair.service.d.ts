@@ -8,6 +8,7 @@ export declare const repairService: {
         estimatedCost?: number;
         advancePaid?: number;
         assignedToId?: string;
+        branchId: string;
     }): Promise<{
         customer: {
             name: string;
@@ -24,6 +25,7 @@ export declare const repairService: {
         };
     } & {
         id: string;
+        branchId: string;
         createdAt: Date;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.RepairStatus;
@@ -62,6 +64,7 @@ export declare const repairService: {
         };
     } & {
         id: string;
+        branchId: string;
         createdAt: Date;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.RepairStatus;

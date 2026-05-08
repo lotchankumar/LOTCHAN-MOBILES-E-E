@@ -21,7 +21,12 @@ export declare const branchService: {
         address: string | null;
     })[]>;
     getBranchById(id: string): Promise<({
-        orders: never;
+        orders: {
+            id: string;
+            createdAt: Date;
+            orderNumber: string;
+            status: import(".prisma/client").$Enums.OrderStatus;
+        }[];
         users: {
             name: string;
             id: string;

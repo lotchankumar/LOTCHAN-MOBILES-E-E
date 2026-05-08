@@ -106,49 +106,49 @@ const BranchesPage = () => {
           )}
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/10">
+            <table className="min-w-full min-w-[700px] divide-y divide-white/10">
               <thead className="bg-[#1a3654]/50 text-[#aec8f0]">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Address</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Staff Count</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Orders Count</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-[#7892b7] uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Name</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Address</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Phone</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Staff</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Orders</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Created</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-[#7892b7] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-transparent divide-y divide-white/10">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-[#7892b7]">
+                    <td colSpan={8} className="px-6 py-12 text-center text-[#7892b7]">
                       Loading branches...
                     </td>
                   </tr>
                 ) : branches.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-[#7892b7]">
+                    <td colSpan={8} className="px-6 py-12 text-center text-[#7892b7]">
                       No branches found. Create one to get started.
                     </td>
                   </tr>
                 ) : (
                   branches.map((branch) => (
                     <tr key={branch.id} className="hover:bg-[#1a3654]/50 text-[#aec8f0]">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#d2e4ff]">{branch.name}</td>
-                      <td className="px-6 py-4 text-sm text-[#d2e4ff] max-w-xs truncate">{branch.address || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch.phone || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.users || 0}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.orders || 0}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-[#d2e4ff]">{branch.name}</td>
+                      <td className="px-4 py-4 text-sm text-[#d2e4ff] max-w-[160px] truncate">{branch.address || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch.phone || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.users || 0}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.orders || 0}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${branch.isActive ? 'bg-green-100/10 text-green-400' : 'bg-red-100/10 text-red-400'}`}>
                           {branch.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#7892b7]">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-[#7892b7]">
                         {new Date(branch.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                      <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div className="flex items-center justify-center gap-3">
                           <button
                             onClick={() => handleToggleStatus(branch)}

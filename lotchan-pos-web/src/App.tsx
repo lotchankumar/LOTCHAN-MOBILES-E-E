@@ -11,6 +11,8 @@ import { AdminReportsPage } from './pages/admin/AdminReportsPage';
 import { AdminSupportPage } from './pages/admin/AdminSupportPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminNotificationsPage } from './pages/admin/AdminNotificationsPage';
+import { AdminSecurityPage } from './pages/admin/AdminSecurityPage';
+import { AdminInventoryPage } from './pages/admin/AdminInventoryPage';
 // Manager pages
 import { ManagerLayout } from './pages/manager/ManagerLayout';
 import { ManagerDashboardPage } from './pages/manager/ManagerDashboardPage';
@@ -82,7 +84,12 @@ function App() {
           <Route path="reports" element={<AdminReportsPage />} />
           <Route path="support" element={<AdminSupportPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="security" element={<AdminSecurityPage />} />
           <Route path="notifications" element={<AdminNotificationsPage />} />
+          <Route path="inventory" element={<AdminInventoryPage />} />
+          <Route path="purchases" element={<ManagerPurchasesPage />} />
+          <Route path="suppliers" element={<ManagerSuppliersPage />} />
+          <Route path="expenses" element={<ManagerExpensesPage />} />
         </Route>
         <Route 
           path="/manager" 

@@ -256,6 +256,18 @@ export interface CreateRepairSparePurchaseRequest {
 }
 
 export const managerService = {
+  // Dashboard Stats
+  async getDashboardStats(branchId?: string): Promise<any> {
+    try {
+      const response = await api.get('/admin/dashboard-stats', {
+        params: { ...(branchId && { branchId }) }
+      });
+      return extractResponseData(response);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch dashboard stats');
+    }
+  },
+
   // Profit
   async getProfit(startDate: string, endDate: string, branchId?: string): Promise<ProfitData> {
     try {
