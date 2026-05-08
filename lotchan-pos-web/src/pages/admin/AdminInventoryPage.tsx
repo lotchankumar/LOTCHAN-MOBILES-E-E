@@ -18,7 +18,7 @@ export const AdminInventoryPage = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await managerService.getInventory();
+      const data = await managerService.getInventory(selectedBranch);
       setInventory(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load inventory');
@@ -29,7 +29,7 @@ export const AdminInventoryPage = () => {
 
   useEffect(() => {
     fetchInventory();
-  }, []);
+  }, [selectedBranch]);
 
   const filtered = useMemo(() => {
     return inventory.filter((p) => {
@@ -131,6 +131,7 @@ export const AdminInventoryPage = () => {
                   <tr className="border-b border-white/10 text-[10px] font-bold uppercase tracking-widest text-[#7892b7]">
                     <th className="px-5 py-3 text-left">SKU</th>
                     <th className="px-5 py-3 text-left">Product</th>
+                    <th className="px-5 py-3 text-left">Branch</th>
                     <th className="px-5 py-3 text-left">Category</th>
                     <th className="px-5 py-3 text-left">Stock Qty</th>
                     <th className="px-5 py-3 text-left">Selling Price</th>
@@ -140,13 +141,13 @@ export const AdminInventoryPage = () => {
                 <tbody className="divide-y divide-white/5 text-sm">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-14 text-center text-[#7892b7]">
+                      <td colSpan={7} className="px-5 py-14 text-center text-[#7892b7]">
                         <span className="animate-pulse">Loading inventory...</span>
                       </td>
                     </tr>
                   ) : filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-14 text-center">
+                      <td colSpan={7} className="px-5 py-14 text-center">
                         <div className="flex flex-col items-center gap-2 text-slate-500">
                           <Package size={36} className="opacity-30" />
                           <p>{search ? `No products matching "${search}"` : 'No products in inventory.'}</p>
@@ -158,10 +159,20 @@ export const AdminInventoryPage = () => {
                       <tr key={product.id} className="hover:bg-white/5 transition-colors">
                         <td className="px-5 py-4 whitespace-nowrap text-[#aec8f0] font-mono text-xs">{product.sku}</td>
                         <td className="px-5 py-4 whitespace-nowrap">
-                          <p className="font-semibold text-white">{product.brand} {product.model}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-white">{product.brand} {product.model}</p>
+                            {product.type === 'REPAIR' && (
+                              <span className="text-[10px] bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.5 rounded font-bold">REPAIR</span>
+                            )}
+                          </div>
                           {product.supplierName && (
                             <p className="text-[10px] text-slate-500">{product.supplierName}</p>
                           )}
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span className="text-white text-xs px-2 py-1 bg-white/5 rounded border border-white/10">
+                            {product.branchName || 'Global'}
+                          </span>
                         </td>
                         <td className="px-5 py-4 whitespace-nowrap text-slate-400 capitalize">{product.categoryName || product.category}</td>
                         <td className="px-5 py-4 whitespace-nowrap font-bold text-[#d2e4ff]">{product.stockQuantity}</td>

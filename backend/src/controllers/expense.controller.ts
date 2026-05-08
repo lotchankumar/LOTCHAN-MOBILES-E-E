@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { AppError } from '../middleware/error.middleware';
+import { auditLogService } from '../services/auditLog.service';
 
 export const expenseController = {
   async createExpense(req: Request, res: Response) {
@@ -13,6 +14,17 @@ export const expenseController = {
 
       const expense = await prisma.expense.create({
         data: { managerId, description, amount },
+      });
+
+      const user = (req as any).user;
+      auditLogService.logAction({
+        userId: user?.id || managerId,
+        action: 'EXPENSE_CREATED',
+        entity: 'Expense',
+        entityId: expense.id,
+        details: JSON.stringify({ description, amount }),
+        branchId: user?.branchId,
+        ipAddress: req.ip,
       });
 
       res.status(201).json({ success: true, data: expense });

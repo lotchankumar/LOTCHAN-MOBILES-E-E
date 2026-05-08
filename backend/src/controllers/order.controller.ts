@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { orderService } from '../services/order.service';
 import { OrderType, PaymentMethod } from '@prisma/client';
 import prisma from '../prisma/client';
+import { auditLogService } from '../services/auditLog.service';
 
 export const orderController = {
   async createOrder(req: Request, res: Response) {
@@ -19,6 +20,17 @@ export const orderController = {
         paymentMethod: paymentMethod as PaymentMethod,
         staffId,
         branchId: req.body.branchId || user?.branchId
+      });
+
+      // Log order creation
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'ORDER_CREATED',
+        entity: 'Order',
+        entityId: order.id,
+        details: JSON.stringify({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, paymentMethod }),
+        branchId: req.body.branchId || user?.branchId,
+        ipAddress: req.ip,
       });
       
       res.status(201).json(order);
@@ -153,10 +165,23 @@ export const orderController = {
     try {
       const id = req.params.id as string;
       const { status } = req.body;
+      const user = (req as any).user;
       const order = await prisma.order.update({
         where: { id },
         data: { status }
       });
+
+      // Log status update
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'ORDER_STATUS_UPDATED',
+        entity: 'Order',
+        entityId: id,
+        details: JSON.stringify({ orderNumber: order.orderNumber, newStatus: status }),
+        branchId: user?.branchId,
+        ipAddress: req.ip,
+      });
+
       res.json(order);
     } catch (error) {
       res.status(500).json({ error: 'Failed to update order status' });

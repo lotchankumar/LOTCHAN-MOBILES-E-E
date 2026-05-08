@@ -105,13 +105,37 @@ async function getLowStockProducts(branchId) {
         include: {
             supplier: { select: { id: true, name: true, phone: true, email: true } },
             categoryType: { select: { id: true, name: true, slug: true } },
-            branchStocks: branchId ? { where: { branchId } } : true,
         },
     });
-    const mapped = products.map((p) => {
-        const stockQty = p.branchStocks.reduce((sum, bs) => sum + bs.stockQty, 0);
-        const minStock = p.branchStocks.reduce((sum, bs) => sum + bs.minStock, 0) || 5;
-        return { ...p, stockQty, minStock };
+    // Fetch branch stocks separately
+    let stockMap = {};
+    if (branchId) {
+        const rows = await client_1.default.branchStock.findMany({
+            where: { branchId },
+            select: { productId: true, stockQty: true, minStock: true },
+        });
+        for (const r of rows)
+            stockMap[r.productId] = { stockQty: r.stockQty, minStock: r.minStock };
+    }
+    else {
+        const rows = await client_1.default.branchStock.findMany({
+            select: { productId: true, stockQty: true, minStock: true },
+        });
+        // Sum all branches for global admin view
+        for (const r of rows) {
+            if (!stockMap[r.productId])
+                stockMap[r.productId] = { stockQty: 0, minStock: r.minStock };
+            stockMap[r.productId].stockQty += r.stockQty;
+        }
+    }
+    // When branchId is set, only include products that actually have stock records for this branch.
+    // Products without a BranchStock entry should NOT appear as "low stock" for a branch they don't belong to.
+    const relevantProducts = branchId
+        ? products.filter((p) => stockMap[p.id] !== undefined)
+        : products;
+    const mapped = relevantProducts.map((p) => {
+        const s = stockMap[p.id] ?? { stockQty: 0, minStock: 5 };
+        return { ...p, stockQty: s.stockQty, minStock: s.minStock };
     });
     return mapped.filter((p) => p.stockQty <= p.minStock).sort((a, b) => a.stockQty - b.stockQty);
 }
@@ -143,13 +167,27 @@ async function getStockValuation(groupBy, branchId) {
         where: { isAvailable: true },
         include: {
             categoryType: { select: { id: true, name: true } },
-            branchStocks: branchId ? { where: { branchId } } : true,
         },
     });
-    const mapped = products.map((p) => {
-        const stockQty = p.branchStocks.reduce((sum, bs) => sum + bs.stockQty, 0);
-        return { ...p, stockQty };
-    });
+    // Fetch branch stocks separately
+    let stockMap = {};
+    if (branchId) {
+        const rows = await client_1.default.branchStock.findMany({
+            where: { branchId },
+            select: { productId: true, stockQty: true },
+        });
+        for (const r of rows)
+            stockMap[r.productId] = r.stockQty;
+    }
+    else {
+        const rows = await client_1.default.branchStock.findMany({
+            select: { productId: true, stockQty: true },
+        });
+        for (const r of rows) {
+            stockMap[r.productId] = (stockMap[r.productId] ?? 0) + r.stockQty;
+        }
+    }
+    const mapped = products.map((p) => ({ ...p, stockQty: stockMap[p.id] ?? 0 }));
     const totalValue = mapped.reduce((s, p) => s + p.stockQty * p.cost, 0);
     const totalUnits = mapped.reduce((s, p) => s + p.stockQty, 0);
     if (groupBy === 'category') {
@@ -181,20 +219,59 @@ async function getProducts(filters) {
             { sku: { contains: filters.search } },
         ];
     }
-    const result = await client_1.default.product.findMany({
-        where,
-        include: {
-            supplier: { select: { id: true, name: true } },
-            categoryType: { select: { id: true, name: true, slug: true } },
-            branchStocks: filters?.branchId ? { where: { branchId: filters.branchId } } : true,
-        },
-        orderBy: { createdAt: 'desc' },
-    });
-    let products = result.map(p => {
-        const stockQty = p.branchStocks.reduce((sum, bs) => sum + bs.stockQty, 0);
-        const minStock = p.branchStocks.reduce((sum, bs) => sum + bs.minStock, 0) || 5;
-        return { ...p, stockQty, minStock };
-    });
+    let products;
+    if (filters?.branchId) {
+        // MANAGER view: only show products that exist in THIS branch's stock
+        const branchStockRows = await client_1.default.branchStock.findMany({
+            where: { branchId: filters.branchId },
+            select: { productId: true, stockQty: true, minStock: true },
+        });
+        if (branchStockRows.length === 0)
+            return []; // branch has no stock yet
+        const stockMap = {};
+        for (const r of branchStockRows) {
+            stockMap[r.productId] = { stockQty: r.stockQty, minStock: r.minStock };
+        }
+        // Restrict product query to only this branch's product IDs
+        where.id = { in: branchStockRows.map(r => r.productId) };
+        const result = await client_1.default.product.findMany({
+            where,
+            include: {
+                supplier: { select: { id: true, name: true } },
+                categoryType: { select: { id: true, name: true, slug: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        products = result.map(p => {
+            const s = stockMap[p.id] ?? { stockQty: 0, minStock: 5 };
+            return { ...p, stockQty: s.stockQty, minStock: s.minStock };
+        });
+    }
+    else {
+        // ADMIN view: all products, sum stock across all branches
+        const result = await client_1.default.product.findMany({
+            where,
+            include: {
+                supplier: { select: { id: true, name: true } },
+                categoryType: { select: { id: true, name: true, slug: true } },
+                branchStocks: { include: { branch: { select: { id: true, name: true } } } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        const allStockRows = await client_1.default.branchStock.findMany({
+            select: { productId: true, stockQty: true, minStock: true },
+        });
+        const stockMap = {};
+        for (const r of allStockRows) {
+            if (!stockMap[r.productId])
+                stockMap[r.productId] = { stockQty: 0, minStock: r.minStock };
+            stockMap[r.productId].stockQty += r.stockQty;
+        }
+        products = result.map(p => {
+            const s = stockMap[p.id] ?? { stockQty: 0, minStock: 5 };
+            return { ...p, stockQty: s.stockQty, minStock: s.minStock };
+        });
+    }
     if (filters?.lowStock) {
         products = products.filter((p) => p.stockQty <= p.minStock);
     }
@@ -243,6 +320,10 @@ async function updateProduct(id, data) {
             throw new error_middleware_1.AppError('SKU already exists', 409);
         }
     }
+    // Accept both backend names (price/cost) and frontend names (sellingPrice/costPrice)
+    const bodyAny = data;
+    const resolvedPrice = data.price !== undefined ? data.price : bodyAny.sellingPrice;
+    const resolvedCost = data.cost !== undefined ? data.cost : bodyAny.costPrice;
     const updateData = {
         ...(data.sku && { sku: data.sku }),
         ...(data.name && { name: data.name }),
@@ -252,8 +333,8 @@ async function updateProduct(id, data) {
         ...(data.supplierId !== undefined && { supplierId: data.supplierId }),
         ...(data.brand && { brand: data.brand }),
         ...(data.model !== undefined && { model: data.model }),
-        ...(data.price !== undefined && { price: data.price }),
-        ...(data.cost !== undefined && { cost: data.cost }),
+        ...(resolvedPrice !== undefined && { price: resolvedPrice }),
+        ...(resolvedCost !== undefined && { cost: resolvedCost }),
         ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
         ...(data.isAvailable !== undefined && { isAvailable: data.isAvailable }),
     };

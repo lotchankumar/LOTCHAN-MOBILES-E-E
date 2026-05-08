@@ -7,4 +7,7 @@ export declare const getProfile: (req: Request, res: Response, next: NextFunctio
 export declare const requestAdminPasswordReset: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 export declare const verifyAdminOTP: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 export declare const resetAdminPassword: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const requestPasswordReset: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const verifyPasswordResetOTP: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const resetPassword: (req: Request, res: Response, next: NextFunction) => Promise<void>;
 //# sourceMappingURL=auth.controller.d.ts.map

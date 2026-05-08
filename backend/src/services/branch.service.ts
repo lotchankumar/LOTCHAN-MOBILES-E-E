@@ -63,10 +63,6 @@ export const branchService = {
       throw new Error('Branch not found');
     }
 
-    if (branch._count.users > 0 || branch._count.orders > 0) {
-      throw new Error('Cannot delete branch with associated users or orders');
-    }
-
     return prisma.branch.delete({ where: { id } });
   }
 };

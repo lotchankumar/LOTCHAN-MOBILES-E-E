@@ -34,6 +34,7 @@ model User {
   stockMovements       StockMovement[]       @relation("MovementUser")
   repairSparePurchases RepairSparePurchase[]
   deviceTokens         DeviceToken[]
+  auditLogs            AuditLog[]
 
   @@map("users")
 }
@@ -55,7 +56,9 @@ model Branch {
   repairSparePurchases    RepairSparePurchase[]
   stockMovements          StockMovement[]
   branchStocks            BranchStock[]
-  branchRepairSpareStocks BranchRepairSpareStock[]
+  repairSpareProducts     RepairSpareProduct[]
+  suppliers               Supplier[]
+  auditLogs               AuditLog[]
 
   @@map("branches")
 }
@@ -105,15 +108,18 @@ model Supplier {
   notes         String?
   creditBalance Float    @default(0)
   isActive      Boolean  @default(true)
+  branchId      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  branch              Branch?              @relation(fields: [branchId], references: [id], onDelete: Cascade)
   products            Product[]
   purchaseOrders      PurchaseOrder[]
   repairSpareProducts RepairSpareProduct[]
   payments            SupplierPayment[]
   purchases           Purchase[]           @relation("SupplierPurchases")
 
+  @@index([branchId])
   @@map("suppliers")
 }
 
@@ -163,7 +169,7 @@ model Order {
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
   staff    User?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
-  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   // Relations
   orderItems OrderItem[]
@@ -236,7 +242,7 @@ model RepairJob {
   customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
   repairCategory RepairCategory? @relation(fields: [repairCategoryId], references: [id], onDelete: SetNull)
   assignedTo     User?           @relation("AssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
-  branch         Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch         Branch          @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   // Relations
   repairParts RepairPart[]
@@ -286,7 +292,7 @@ model Purchase {
 
   manager     User           @relation(fields: [managerId], references: [id], onDelete: Restrict)
   supplierRef Supplier?      @relation("SupplierPurchases", fields: [supplierId], references: [id], onDelete: SetNull)
-  branch      Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch      Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
   items       PurchaseItem[]
 
   @@map("purchases")
@@ -367,7 +373,7 @@ model StockMovement {
   product       Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
   purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
   user          User?          @relation("MovementUser", fields: [userId], references: [id], onDelete: SetNull)
-  branch        Branch         @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch        Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([type])
@@ -544,7 +550,7 @@ enum POStatus {
 model RepairSpareProduct {
   id                String   @id @default(cuid())
   name              String
-  sku               String   @unique
+  sku               String
   description       String?
   categoryId        String?
   supplierId        String?
@@ -553,17 +559,22 @@ model RepairSpareProduct {
   compatibleDevices String?
   purchasePrice     Float    @default(0)
   sellingPrice      Float    @default(0)
+  stockQty          Int      @default(0)
+  minStock          Int      @default(5)
   imageUrl          String?
   isAvailable       Boolean  @default(true)
+  branchId          String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  branch       Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
   categoryType ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   supplier     Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 
   purchaseItems RepairSparePurchaseItem[]
-  branchStocks  BranchRepairSpareStock[]
 
+  @@unique([branchId, sku])
+  @@index([branchId])
   @@index([categoryId])
   @@index([supplierId])
   @@map("repair_spare_products")
@@ -582,7 +593,7 @@ model RepairSparePurchase {
   updatedAt    DateTime @updatedAt
 
   manager User                      @relation(fields: [managerId], references: [id], onDelete: Restrict)
-  branch  Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch  Branch                    @relation(fields: [branchId], references: [id], onDelete: Cascade)
   items   RepairSparePurchaseItem[]
 
   @@map("repair_spare_purchases")
@@ -652,20 +663,51 @@ model BranchStock {
   @@map("branch_stocks")
 }
 
-model BranchRepairSpareStock {
-  id             String   @id @default(cuid())
-  branchId       String
-  spareProductId String
-  stockQty       Int      @default(0)
-  minStock       Int      @default(5)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+model AuditLog {
+  id        String      @id @default(cuid())
+  userId    String?
+  action    AuditAction
+  entity    String      // e.g. "Order", "RepairJob", "Purchase", "User"
+  entityId  String?     // ID of the affected entity
+  details   String?     // JSON string with extra context
+  branchId  String?
+  ipAddress String?
+  createdAt DateTime    @default(now())
 
-  branch       Branch             @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  spareProduct RepairSpareProduct @relation(fields: [spareProductId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  branch Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
-  @@unique([branchId, spareProductId])
+  @@index([userId])
   @@index([branchId])
-  @@index([spareProductId])
-  @@map("branch_repair_spare_stocks")
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  ORDER_CREATED
+  ORDER_STATUS_UPDATED
+  REPAIR_CREATED
+  REPAIR_STATUS_UPDATED
+  REPAIR_PARTS_ADDED
+  PURCHASE_CREATED
+  EXPENSE_CREATED
+  PRODUCT_CREATED
+  PRODUCT_UPDATED
+  PRODUCT_DELETED
+  BRANCH_CREATED
+  BRANCH_UPDATED
+  BRANCH_DELETED
+  USER_CREATED
+  USER_UPDATED
+  PASSWORD_RESET
+  SUPPLIER_CREATED
+  SUPPLIER_UPDATED
+  SETTINGS_UPDATED
+  SPARE_PRODUCT_CREATED
+  SPARE_PURCHASE_CREATED
+}
+

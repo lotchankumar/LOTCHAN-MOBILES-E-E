@@ -2,11 +2,13 @@ export type CreateBranchData = {
     name: string;
     address?: string;
     phone?: string;
+    isActive?: boolean;
 };
 export type UpdateBranchData = {
     name?: string;
     address?: string;
     phone?: string;
+    isActive?: boolean;
 };
 export declare const branchService: {
     getAllBranches(): Promise<({
@@ -17,8 +19,9 @@ export declare const branchService: {
         name: string;
         id: string;
         createdAt: Date;
-        phone: string | null;
+        isActive: boolean;
         address: string | null;
+        phone: string | null;
     })[]>;
     getBranchById(id: string): Promise<({
         orders: {
@@ -30,41 +33,45 @@ export declare const branchService: {
         users: {
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string;
             passwordHash: string;
             role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
-            branchId: string | null;
             managerId: string | null;
-            createdAt: Date;
         }[];
     } & {
         name: string;
         id: string;
         createdAt: Date;
-        phone: string | null;
+        isActive: boolean;
         address: string | null;
+        phone: string | null;
     }) | null>;
     createBranch(data: CreateBranchData): Promise<{
         name: string;
         id: string;
         createdAt: Date;
-        phone: string | null;
+        isActive: boolean;
         address: string | null;
+        phone: string | null;
     }>;
     updateBranch(id: string, data: UpdateBranchData): Promise<{
         name: string;
         id: string;
         createdAt: Date;
-        phone: string | null;
+        isActive: boolean;
         address: string | null;
+        phone: string | null;
     }>;
     deleteBranch(id: string): Promise<{
         name: string;
         id: string;
         createdAt: Date;
-        phone: string | null;
+        isActive: boolean;
         address: string | null;
+        phone: string | null;
     }>;
 };
 //# sourceMappingURL=branch.service.d.ts.map

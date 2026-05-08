@@ -13,11 +13,11 @@ export declare const repairService: {
         customer: {
             name: string;
             id: string;
+            createdAt: Date;
             email: string;
             passwordHash: string | null;
-            createdAt: Date;
-            phone: string;
             address: string | null;
+            phone: string;
             walletBalance: number;
             referralCode: string;
             referredById: string | null;
@@ -25,8 +25,8 @@ export declare const repairService: {
         };
     } & {
         id: string;
-        branchId: string;
         createdAt: Date;
+        branchId: string;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.RepairStatus;
         ticketNumber: string;
@@ -52,11 +52,11 @@ export declare const repairService: {
         customer: {
             name: string;
             id: string;
+            createdAt: Date;
             email: string;
             passwordHash: string | null;
-            createdAt: Date;
-            phone: string;
             address: string | null;
+            phone: string;
             walletBalance: number;
             referralCode: string;
             referredById: string | null;
@@ -64,8 +64,8 @@ export declare const repairService: {
         };
     } & {
         id: string;
-        branchId: string;
         createdAt: Date;
+        branchId: string;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.RepairStatus;
         ticketNumber: string;

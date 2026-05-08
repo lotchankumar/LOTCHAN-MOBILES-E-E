@@ -33,7 +33,7 @@ export const ManagerLayout = () => {
   const navItems = [
     { name: 'Dashboard', path: '/manager/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { name: 'Purchases', path: '/manager/purchases', icon: <ShoppingCart className="w-5 h-5" /> },
-    { name: 'Inventory', path: '/manager/inventory', icon: <Package className="w-5 h-5" /> },
+    { name: 'Product Inventory', path: '/manager/inventory', icon: <Package className="w-5 h-5" /> },
     { name: 'Repair Inventory', path: '/manager/repair-inventory', icon: <Wrench className="w-5 h-5" /> },
     { name: 'Suppliers', path: '/manager/suppliers', icon: <Truck className="w-5 h-5" /> },
     { name: 'Expenses', path: '/manager/expenses', icon: <Receipt className="w-5 h-5" /> },
@@ -63,7 +63,12 @@ export const ManagerLayout = () => {
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-sm text-slate-400">Welcome,</span>
-            <span className="text-sm font-medium text-blue-300">{user?.email}</span>
+            <span className="text-sm font-medium text-blue-300">{user?.name || user?.email}</span>
+            {user?.branchName && (
+              <span className="text-xs font-medium text-cyan-400 bg-cyan-900/30 px-2 py-0.5 rounded border border-cyan-800/50 ml-2">
+                {user.branchName}
+              </span>
+            )}
           </div>
           <div className="relative" ref={profileRef}>
             <button
@@ -71,15 +76,17 @@ export const ManagerLayout = () => {
               className="h-8 w-8 rounded-full border border-blue-500/30 overflow-hidden bg-[#0c2b49] flex items-center justify-center hover:border-blue-400 transition-colors cursor-pointer"
             >
               <span className="text-xs font-bold text-blue-400">
-                {user?.email?.charAt(0).toUpperCase() || 'M'}
+                {(user?.name || user?.email || 'M').charAt(0).toUpperCase()}
               </span>
             </button>
             {showProfileMenu && (
               <div className="pos-profile-dropdown pos-fade-in">
                 <div className="px-4 py-3 border-b border-white/5">
                   <p className="text-xs text-slate-400">Signed in as</p>
-                  <p className="text-sm font-medium text-blue-300 truncate mt-0.5">{user?.email}</p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">{user?.role}</p>
+                  <p className="text-sm font-medium text-blue-300 truncate mt-0.5">{user?.name || user?.email}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">
+                    {user?.role} {user?.branchName ? ` • ${user.branchName}` : ''}
+                  </p>
                 </div>
                 <button
                   onClick={handleLogout}

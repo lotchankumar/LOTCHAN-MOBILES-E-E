@@ -17,6 +17,12 @@ exports.cacheService = {
         cache.set(key, fresh, ttlSeconds);
         return fresh;
     },
+    set(key, value, ttlSeconds = 60) {
+        cache.set(key, value, ttlSeconds);
+    },
+    get(key) {
+        return cache.get(key);
+    },
     invalidate(key) {
         cache.del(key);
     },

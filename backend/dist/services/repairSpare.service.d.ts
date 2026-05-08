@@ -12,6 +12,7 @@ export interface CreateSpareProductData {
     stockQty?: number;
     minStock?: number;
     imageUrl?: string;
+    branchId?: string;
 }
 export interface UpdateSpareProductData {
     name?: string;
@@ -28,6 +29,7 @@ export interface UpdateSpareProductData {
     minStock?: number;
     imageUrl?: string;
     isAvailable?: boolean;
+    branchId?: string;
 }
 export interface SpareProductFilters {
     categoryId?: string;
@@ -39,6 +41,7 @@ export interface SpareProductFilters {
 export interface SparePurchaseFilters {
     startDate?: string;
     endDate?: string;
+    branchId?: string;
 }
 export interface CreateSparePurchaseData {
     managerId: string;
@@ -54,7 +57,7 @@ export interface CreateSparePurchaseData {
     branchId: string;
 }
 export declare const repairSpareService: {
-    getAllSpareProducts(filters?: SpareProductFilters): Promise<any[]>;
+    getAllSpareProducts(filters?: SpareProductFilters): Promise<any>;
     getSpareProductById(id: string): Promise<any>;
     createSpareProduct(data: CreateSpareProductData): Promise<any>;
     updateSpareProduct(id: string, data: UpdateSpareProductData): Promise<any>;

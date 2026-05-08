@@ -8,7 +8,10 @@ const manager_service_1 = require("../services/manager.service");
 const client_1 = __importDefault(require("../prisma/client"));
 exports.staffController = {
     async getAllStaff(req, res) {
-        const staff = await manager_service_1.staffService.getAllStaff();
+        const loggedInUser = req.user;
+        // MANAGERs only see staff within their own branch; ADMINs see all
+        const branchId = loggedInUser.role === 'MANAGER' ? loggedInUser.branchId : undefined;
+        const staff = await manager_service_1.staffService.getAllStaff(branchId);
         res.json(staff);
     },
     async createStaff(req, res) {

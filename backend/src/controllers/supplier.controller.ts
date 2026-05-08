@@ -5,7 +5,13 @@ import { AuthRequest } from '../middleware/auth.middleware';
 export const supplierController = {
   async getAllSuppliers(req: Request, res: Response) {
     try {
-      const suppliers = await supplierService.getAllSuppliers();
+      const authUser = (req as any).user;
+      // Managers see only their branch's suppliers; Admins can optionally filter by branch
+      const branchId = authUser?.role === 'MANAGER'
+        ? authUser.branchId
+        : (req.query.branchId as string | undefined);
+
+      const suppliers = await supplierService.getAllSuppliers(branchId);
       const mapped = suppliers.map((s: any) => ({
         id: s.id,
         name: s.name,
@@ -18,6 +24,8 @@ export const supplierController = {
         totalPaid: s.totalPaid || 0,
         isActive: s.isActive,
         productCount: s._count?.products || 0,
+        branchId: s.branchId,
+        branchName: s.branch?.name || null,
         createdAt: s.createdAt,
         updatedAt: s.updatedAt,
       }));
@@ -39,7 +47,13 @@ export const supplierController = {
 
   async createSupplier(req: Request, res: Response) {
     try {
-      const supplier = await supplierService.createSupplier(req.body);
+      const authUser = (req as any).user;
+      // Auto-assign the manager's branchId when creating a supplier
+      const branchId = req.body.branchId || authUser?.branchId || null;
+      const supplier = await supplierService.createSupplier({
+        ...req.body,
+        branchId,
+      });
       res.status(201).json({ success: true, data: supplier });
     } catch (error: any) {
       res.status(error.statusCode || 500).json({ error: error.message || 'Failed to create supplier' });

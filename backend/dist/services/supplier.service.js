@@ -7,8 +7,13 @@ exports.supplierService = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const error_middleware_1 = require("../middleware/error.middleware");
 exports.supplierService = {
-    async getAllSuppliers() {
+    async getAllSuppliers(branchId) {
+        const where = {};
+        if (branchId) {
+            where.branchId = branchId;
+        }
         const suppliers = await client_1.default.supplier.findMany({
+            where,
             orderBy: { name: 'asc' },
             include: {
                 _count: {
@@ -17,6 +22,9 @@ exports.supplierService = {
                 payments: {
                     where: { paymentType: 'DEBIT' },
                     select: { amount: true }
+                },
+                branch: {
+                    select: { id: true, name: true }
                 }
             }
         });
@@ -33,11 +41,14 @@ exports.supplierService = {
             where: { id },
             include: {
                 products: {
-                    select: { id: true, name: true, sku: true, stockQty: true }
+                    select: { id: true, name: true, sku: true }
                 },
                 payments: {
                     orderBy: { createdAt: 'desc' },
                     take: 50
+                },
+                branch: {
+                    select: { id: true, name: true }
                 }
             }
         });
@@ -74,6 +85,7 @@ exports.supplierService = {
                 phone: data.phone?.trim() || null,
                 address: data.address?.trim() || null,
                 notes: data.notes?.trim() || null,
+                branchId: data.branchId || null,
             }
         });
     },
@@ -105,6 +117,8 @@ exports.supplierService = {
             updateData.address = updateData.address?.trim() || null;
         if (updateData.notes !== undefined)
             updateData.notes = updateData.notes?.trim() || null;
+        // Don't allow changing branchId through update
+        delete updateData.branchId;
         return client_1.default.supplier.update({
             where: { id },
             data: updateData
@@ -189,6 +203,9 @@ exports.supplierService = {
                 },
                 _count: {
                     select: { products: true, purchases: true }
+                },
+                branch: {
+                    select: { id: true, name: true }
                 }
             }
         });

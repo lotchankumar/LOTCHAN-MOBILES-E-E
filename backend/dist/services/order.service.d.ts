@@ -14,11 +14,11 @@ export declare const orderService: {
         customer: {
             name: string;
             id: string;
+            createdAt: Date;
             email: string;
             passwordHash: string | null;
-            createdAt: Date;
-            phone: string;
             address: string | null;
+            phone: string;
             walletBalance: number;
             referralCode: string;
             referredById: string | null;
@@ -27,8 +27,8 @@ export declare const orderService: {
         items: never;
     } & {
         id: string;
-        branchId: string;
         createdAt: Date;
+        branchId: string;
         updatedAt: Date;
         orderNumber: string;
         status: import(".prisma/client").$Enums.OrderStatus;

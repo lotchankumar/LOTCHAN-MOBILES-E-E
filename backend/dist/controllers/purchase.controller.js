@@ -7,6 +7,7 @@ exports.purchaseController = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const error_middleware_1 = require("../middleware/error.middleware");
 const cache_service_1 = require("../services/cache.service");
+const auditLog_service_1 = require("../services/auditLog.service");
 exports.purchaseController = {
     async createPurchase(req, res) {
         try {
@@ -139,17 +140,15 @@ exports.purchaseController = {
                     });
                     // Update stock for each spare item
                     for (const item of spareItems) {
+                        const updateData = {
+                            stockQty: { increment: item.quantity }
+                        };
                         if (item.sellingPrice && item.sellingPrice > 0) {
-                            await tx.repairSpareProduct.update({
-                                where: { id: item.spareProductId },
-                                data: { sellingPrice: item.sellingPrice },
-                            });
+                            updateData.sellingPrice = item.sellingPrice;
                         }
-                        // Increment branch spare stock
-                        await tx.branchRepairSpareStock.upsert({
-                            where: { branchId_spareProductId: { branchId, spareProductId: item.spareProductId } },
-                            update: { stockQty: { increment: item.quantity } },
-                            create: { branchId, spareProductId: item.spareProductId, stockQty: item.quantity }
+                        await tx.repairSpareProduct.update({
+                            where: { id: item.spareProductId },
+                            data: updateData,
                         });
                     }
                 }
@@ -192,6 +191,17 @@ exports.purchaseController = {
             // Invalidate products cache since stock quantities or new products were added
             await cache_service_1.cacheService.invalidatePattern('products:*');
             await cache_service_1.cacheService.invalidatePattern('product:*');
+            // Log purchase creation
+            const user = req.user;
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id || managerId,
+                action: 'PURCHASE_CREATED',
+                entity: 'Purchase',
+                entityId: purchase.purchase?.id || purchase.sparePurchase?.id || undefined,
+                details: JSON.stringify({ invoiceNo, supplier, totalAmount, productItems: items?.length || 0, spareItems: spareItems?.length || 0 }),
+                branchId: branchId,
+                ipAddress: req.ip,
+            });
             res.status(201).json({ success: true, data: purchase });
         }
         catch (error) {

@@ -13,6 +13,7 @@ router.get('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRol
 router.get('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN', 'MANAGER']), branch_controller_1.branchController.getBranchById);
 router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), (0, validation_middleware_1.validate)(validation_1.createBranchSchema), branch_controller_1.branchController.createBranch);
 router.patch('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), branch_controller_1.branchController.updateBranch);
+router.post('/:id/delete-otp', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), branch_controller_1.branchController.requestDeleteOtp);
 router.delete('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), branch_controller_1.branchController.deleteBranch);
 exports.default = router;
 //# sourceMappingURL=branch.routes.js.map

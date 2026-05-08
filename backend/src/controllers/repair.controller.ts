@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { repairService } from '../services/repair.service';
 import { RepairStatus } from '@prisma/client';
 import prisma from '../prisma/client';
+import { auditLogService } from '../services/auditLog.service';
 
 export const repairController = {
   async createRepair(req: Request, res: Response) {
@@ -21,6 +22,18 @@ export const repairController = {
         assignedToId,
         branchId: req.body.branchId || user?.branchId
       });
+
+      // Log repair creation
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'REPAIR_CREATED',
+        entity: 'RepairJob',
+        entityId: job.id,
+        details: JSON.stringify({ ticketNumber: job.ticketNumber, deviceModel, estimatedCost }),
+        branchId: req.body.branchId || user?.branchId,
+        ipAddress: req.ip,
+      });
+
       res.status(201).json(job);
     } catch (error) {
       console.error('Failed to create repair job:', error);
@@ -50,7 +63,20 @@ export const repairController = {
     try {
       const id = req.params.id as string;
       const { status } = req.body;
+      const user = (req as any).user;
       const job = await repairService.updateRepairStatus(id, status as RepairStatus);
+
+      // Log repair status update
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'REPAIR_STATUS_UPDATED',
+        entity: 'RepairJob',
+        entityId: id,
+        details: JSON.stringify({ ticketNumber: job.ticketNumber, newStatus: status }),
+        branchId: user?.branchId,
+        ipAddress: req.ip,
+      });
+
       res.json(job);
     } catch (error) {
       console.error('Failed to update repair status:', error);
@@ -61,8 +87,21 @@ export const repairController = {
   async addParts(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const { parts } = req.body; // Array<{ productId: string; quantity: number }>
+      const { parts } = req.body;
+      const user = (req as any).user;
       await repairService.usePartsInRepair(id, parts);
+
+      // Log parts added
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'REPAIR_PARTS_ADDED',
+        entity: 'RepairJob',
+        entityId: id,
+        details: JSON.stringify({ partsCount: parts?.length }),
+        branchId: user?.branchId,
+        ipAddress: req.ip,
+      });
+
       res.status(200).json({ success: true, message: 'Parts added to repair successfully' });
     } catch (error: any) {
       if (error.message && error.message.includes('Insufficient stock')) {

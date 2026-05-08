@@ -6,16 +6,24 @@ exports.repairSpareController = {
     // ===== Spare Products =====
     async getAllSpareProducts(req, res) {
         try {
+            const authUser = req.user;
+            console.log('[RepairSpare] GET /repair-spare-products | user:', authUser?.email, 'role:', authUser?.role, 'branchId:', authUser?.branchId);
+            console.log('[RepairSpare] req.query.branchId:', req.query.branchId);
+            const branchId = req.managerBranchId || req.query.branchId;
             const filters = {
                 ...(req.query.categoryId && { categoryId: req.query.categoryId }),
                 ...(req.query.supplierId && { supplierId: req.query.supplierId }),
                 ...(req.query.search && { search: req.query.search }),
                 ...(req.query.lowStock === 'true' && { lowStock: true }),
+                ...(branchId && { branchId: branchId }),
             };
+            console.log('[RepairSpare] filters:', JSON.stringify(filters));
             const products = await repairSpare_service_1.repairSpareService.getAllSpareProducts(filters);
+            console.log('[RepairSpare] returned', products.length, 'products');
             res.json({ success: true, data: products });
         }
         catch (error) {
+            console.error('[RepairSpare] getAllSpareProducts error:', error);
             res.status(500).json({ error: error.message || 'Failed to fetch spare products' });
         }
     },
@@ -30,7 +38,10 @@ exports.repairSpareController = {
     },
     async createSpareProduct(req, res) {
         try {
-            const product = await repairSpare_service_1.repairSpareService.createSpareProduct(req.body);
+            const data = { ...req.body };
+            if (req.query.branchId)
+                data.branchId = req.query.branchId;
+            const product = await repairSpare_service_1.repairSpareService.createSpareProduct(data);
             res.status(201).json({ success: true, data: product });
         }
         catch (error) {
@@ -39,7 +50,10 @@ exports.repairSpareController = {
     },
     async updateSpareProduct(req, res) {
         try {
-            const product = await repairSpare_service_1.repairSpareService.updateSpareProduct(req.params.id, req.body);
+            const data = { ...req.body };
+            if (req.query.branchId)
+                data.branchId = req.query.branchId;
+            const product = await repairSpare_service_1.repairSpareService.updateSpareProduct(req.params.id, data);
             res.json({ success: true, data: product });
         }
         catch (error) {
@@ -58,9 +72,11 @@ exports.repairSpareController = {
     // ===== Spare Purchases =====
     async getAllSparePurchases(req, res) {
         try {
+            const branchId = req.managerBranchId || req.query.branchId;
             const filters = {
                 ...(req.query.startDate && { startDate: req.query.startDate }),
                 ...(req.query.endDate && { endDate: req.query.endDate }),
+                ...(branchId && { branchId: branchId }),
             };
             const purchases = await repairSpare_service_1.repairSpareService.getAllSparePurchases(filters);
             res.json({ success: true, data: purchases });

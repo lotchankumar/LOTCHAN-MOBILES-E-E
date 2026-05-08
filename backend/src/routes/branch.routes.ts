@@ -10,6 +10,7 @@ router.get('/', authenticate, requireRole(['ADMIN', 'MANAGER']), branchControlle
 router.get('/:id', authenticate, requireRole(['ADMIN', 'MANAGER']), branchController.getBranchById);
 router.post('/', authenticate, requireRole(['ADMIN']), validate(createBranchSchema), branchController.createBranch);
 router.patch('/:id', authenticate, requireRole(['ADMIN']), branchController.updateBranch);
+router.post('/:id/delete-otp', authenticate, requireRole(['ADMIN']), branchController.requestDeleteOtp);
 router.delete('/:id', authenticate, requireRole(['ADMIN']), branchController.deleteBranch);
 
 export default router;

@@ -35,9 +35,14 @@ const manager_routes_1 = __importDefault(require("./manager.routes"));
 const branch_routes_1 = __importDefault(require("./branch.routes"));
 const staff_routes_1 = __importDefault(require("./staff.routes"));
 const staff_controller_1 = require("../controllers/staff.controller");
+const auditLog_controller_1 = require("../controllers/auditLog.controller");
 router.use('/admin/branches', branch_routes_1.default);
 router.use('/admin', manager_routes_1.default);
 router.use('/admin', staff_routes_1.default);
 router.get('/admin/organization-hierarchy', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), staff_controller_1.staffController.getOrganizationHierarchy);
+// Audit Logs (Admin only)
+router.get('/admin/audit-logs/stats', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), auditLog_controller_1.auditLogController.getStats);
+router.get('/admin/audit-logs/export', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), auditLog_controller_1.auditLogController.exportCSV);
+router.get('/admin/audit-logs', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), auditLog_controller_1.auditLogController.getLogs);
 exports.default = router;
 //# sourceMappingURL=index.js.map

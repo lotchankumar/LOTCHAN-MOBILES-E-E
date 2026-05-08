@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { inventoryService } from '../services/inventory.service';
 import { cacheService } from '../services/cache.service';
+import { auditLogService } from '../services/auditLog.service';
+import prisma from '../prisma/client';
 
 export const productController = {
   async getAllProducts(req: Request, res: Response) {
@@ -41,6 +43,35 @@ export const productController = {
       const product = await inventoryService.createProduct(req.body);
       cacheService.invalidatePattern('products:*');
       cacheService.invalidatePattern('product:*');
+      const user = (req as any).user;
+
+      // Create BranchStock for the creator's branch so the product appears in branch-scoped inventory
+      const branchId = req.body.branchId || user?.branchId;
+      if (branchId) {
+        try {
+          await prisma.branchStock.create({
+            data: {
+              branchId,
+              productId: product.id,
+              stockQty: req.body.stockQty || 0,
+              minStock: req.body.minStock || 5,
+            },
+          });
+        } catch (stockErr) {
+          console.error('[PRODUCT] Failed to create branch stock:', stockErr);
+        }
+      }
+
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'PRODUCT_CREATED',
+        entity: 'Product',
+        entityId: product.id,
+        details: JSON.stringify({ name: req.body.name || `${req.body.brand} ${req.body.model}`, sku: product.sku }),
+        branchId: user?.branchId,
+        ipAddress: req.ip,
+      });
+
       res.status(201).json(product);
     } catch (error: any) {
       res.status(error.status || 500).json({ error: error.message || 'Failed to create product' });
@@ -53,6 +84,18 @@ export const productController = {
       const product = await inventoryService.updateProduct(id, req.body);
       cacheService.invalidatePattern('products:*');
       cacheService.invalidatePattern('product:*');
+      const user = (req as any).user;
+
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'PRODUCT_UPDATED',
+        entity: 'Product',
+        entityId: id,
+        details: JSON.stringify(req.body),
+        branchId: user?.branchId,
+        ipAddress: req.ip,
+      });
+
       res.json(product);
     } catch (error: any) {
       res.status(error.status || 500).json({ error: error.message || 'Failed to update product' });
@@ -65,6 +108,18 @@ export const productController = {
       await inventoryService.deleteProduct(id);
       cacheService.invalidatePattern('products:*');
       cacheService.invalidatePattern('product:*');
+      const user = (req as any).user;
+
+      auditLogService.logAction({
+        userId: user?.id,
+        action: 'PRODUCT_DELETED',
+        entity: 'Product',
+        entityId: id,
+        details: JSON.stringify({ deletedProductId: id }),
+        branchId: user?.branchId,
+        ipAddress: req.ip,
+      });
+
       res.status(204).send();
     } catch (error: any) {
       res.status(error.status || 500).json({ error: error.message || 'Failed to delete product' });

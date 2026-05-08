@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useAuthStore } from '../../store/auth.store';
 import { UserRole } from '../../types';
 import type { BranchWithCount } from '../../hooks/useManagers';
-import { useBranchesQuery, useCreateBranch, useUpdateBranch, useDeleteBranch } from '../../hooks/useManagers';
-import { Plus, Edit3, Trash2, ChevronDown, XCircle, AlertCircle, Power, CheckCircle } from 'lucide-react';
-import { BackButton } from '../../components/BackButton';
+import { useBranchesQuery, useCreateBranch, useUpdateBranch, useDeleteBranch, useRequestDeleteBranchOtp } from '../../hooks/useManagers';
+import { Plus, Edit3, Trash2, XCircle, AlertCircle, Power } from 'lucide-react';
 
 const BranchesPage = () => {
   const { user } = useAuthStore();
@@ -22,8 +21,11 @@ const BranchesPage = () => {
     phone: '',
     isActive: true
   });
-  const [showConfirm, setShowConfirm] = useState(false);
   const [confirmActionId, setConfirmActionId] = useState('');
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const { requestOtp, loading: requestingOtp } = useRequestDeleteBranchOtp();
 
   const openAddModal = () => {
     setFormData({ name: '', address: '', phone: '', isActive: true });
@@ -58,9 +60,16 @@ const BranchesPage = () => {
     }
   };
 
-  const handleDeleteConfirm = (id: string) => {
+  const handleDeleteConfirm = async (id: string) => {
     setConfirmActionId(id);
-    setShowConfirm(true);
+    setOtpError('');
+    try {
+      await requestOtp(id);
+      setShowOtpModal(true);
+    } catch (err: any) {
+      // Error handled by hook, or we could set global error
+      alert(err?.response?.data?.message || 'Failed to request OTP');
+    }
   };
 
   const handleToggleStatus = async (branch: BranchWithCount) => {
@@ -72,11 +81,16 @@ const BranchesPage = () => {
   };
 
   const confirmDelete = async () => {
+    if (!otp || otp.length < 6) {
+      setOtpError('Please enter a valid 6-digit OTP');
+      return;
+    }
     try {
-      await deleteBranchMutation(confirmActionId, refetchBranches);
-      setShowConfirm(false);
-    } catch (err) {
-      // Error handled in mutation
+      await deleteBranchMutation(confirmActionId, otp, refetchBranches);
+      setShowOtpModal(false);
+      setOtp('');
+    } catch (err: any) {
+      setOtpError(err?.response?.data?.message || 'Invalid or expired OTP');
     }
   };
 
@@ -166,7 +180,8 @@ const BranchesPage = () => {
                           </button>
                           <button
                             onClick={() => handleDeleteConfirm(branch.id)}
-                            className="text-destructive hover:text-red-400 transition-colors"
+                            disabled={requestingOtp && confirmActionId === branch.id}
+                            className={`${requestingOtp && confirmActionId === branch.id ? 'text-slate-500' : 'text-destructive hover:text-red-400'} transition-colors`}
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -268,36 +283,50 @@ const BranchesPage = () => {
         </div>
       )}
 
-      {/* Delete Confirm Dialog */}
-      {showConfirm && (
+      {/* OTP Delete Dialog */}
+      {showOtpModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-transparent rounded-lg p-6 w-full max-w-md">
+          <div className="bg-[#0a192f] border border-white/10 rounded-lg p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-start mb-6">
               <div className="flex-shrink-0">
                 <AlertCircle className="h-6 w-6 text-warning mt-0.5" />
               </div>
               <div className="ml-3 flex-1">
                 <h3 className="text-lg font-medium text-[#d2e4ff]">
-                  Confirm Delete
+                  Verify Deletion
                 </h3>
                 <p className="mt-2 text-sm text-[#7892b7]">
-                  This branch cannot be deleted if it has associated staff or orders. This action cannot be undone.
+                  An OTP has been sent to your admin email. Please enter it below to permanently delete this branch.
                 </p>
               </div>
             </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-[#7892b7] mb-2">OTP Code</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => { setOtp(e.target.value); setOtpError(''); }}
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white font-mono text-center tracking-[0.5em] text-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                placeholder="------"
+              />
+              {otpError && <p className="mt-2 text-sm text-red-400">{otpError}</p>}
+            </div>
+
             <div className="flex space-x-3">
               <button
-                onClick={() => setShowConfirm(false)}
+                onClick={() => { setShowOtpModal(false); setOtp(''); setOtpError(''); }}
                 className="flex-1 px-4 py-2 border border-white/10 text-[#7892b7] rounded-md hover:bg-white/5 text-[#d2e4ff] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                disabled={loading}
+                disabled={loading || otp.length < 6}
                 className="flex-1 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 font-medium flex items-center justify-center disabled:opacity-50"
               >
-                {loading ? 'Deleting...' : 'Delete Branch'}
+                {loading ? 'Verifying...' : 'Delete Branch'}
               </button>
             </div>
           </div>

@@ -17,6 +17,7 @@ export interface CreateSpareProductData {
   stockQty?: number;
   minStock?: number;
   imageUrl?: string;
+  branchId?: string;
 }
 
 export interface UpdateSpareProductData {
@@ -34,6 +35,7 @@ export interface UpdateSpareProductData {
   minStock?: number;
   imageUrl?: string;
   isAvailable?: boolean;
+  branchId?: string;
 }
 
 export interface SpareProductFilters {
@@ -47,6 +49,7 @@ export interface SpareProductFilters {
 export interface SparePurchaseFilters {
   startDate?: string;
   endDate?: string;
+  branchId?: string;
 }
 
 export interface CreateSparePurchaseData {
@@ -77,21 +80,20 @@ export const repairSpareService = {
         { sku: { contains: filters.search } },
       ];
     }
+    
+    // Filter directly by branchId on the product
+    if (filters?.branchId) {
+      where.branchId = filters.branchId;
+    }
 
-    let products: any[] = await db.repairSpareProduct.findMany({
+    let products = await db.repairSpareProduct.findMany({
       where,
       include: {
         categoryType: { select: { id: true, name: true } },
         supplier: { select: { id: true, name: true } },
-        branchStocks: filters?.branchId ? { where: { branchId: filters.branchId } } : true,
+        branch: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: 'desc' },
-    });
-
-    products = products.map((p: any) => {
-      const stockQty = p.branchStocks?.reduce((sum: number, bs: any) => sum + bs.stockQty, 0) || 0;
-      const minStock = p.branchStocks?.reduce((sum: number, bs: any) => sum + bs.minStock, 0) || 5;
-      return { ...p, stockQty, minStock };
     });
 
     if (filters?.lowStock) {
@@ -107,24 +109,38 @@ export const repairSpareService = {
       include: {
         categoryType: { select: { id: true, name: true } },
         supplier: { select: { id: true, name: true } },
-        branchStocks: true,
       },
     });
     if (!product) throw new AppError('Spare product not found', 404);
     
-    const stockQty = product.branchStocks?.reduce((sum: number, bs: any) => sum + bs.stockQty, 0) || 0;
-    const minStock = product.branchStocks?.reduce((sum: number, bs: any) => sum + bs.minStock, 0) || 5;
-    return { ...product, stockQty, minStock };
+    return product;
   },
 
   async createSpareProduct(data: CreateSpareProductData) {
-    if (await db.repairSpareProduct.findUnique({ where: { sku: data.sku } })) {
-      throw new AppError('SKU already exists', 409);
+    if (!data.branchId) {
+      throw new AppError('Branch ID is required to create a repair spare product', 400);
+    }
+
+    // Check branch-specific SKU
+    const existing = await db.repairSpareProduct.findUnique({
+      where: {
+        branchId_sku: {
+          branchId: data.branchId,
+          sku: data.sku,
+        }
+      }
+    });
+
+    if (existing) {
+      throw new AppError('SKU already exists in this branch', 409);
     }
 
     const createData: any = {
       name: data.name,
       sku: data.sku,
+      branchId: data.branchId,
+      stockQty: data.stockQty ?? 0,
+      minStock: data.minStock ?? 5,
       ...(data.description !== undefined && { description: data.description }),
       ...(data.categoryId && { categoryId: data.categoryId }),
       ...(data.supplierId && { supplierId: data.supplierId }),
@@ -133,12 +149,11 @@ export const repairSpareService = {
       ...(data.compatibleDevices !== undefined && { compatibleDevices: data.compatibleDevices }),
       ...(data.purchasePrice !== undefined && { purchasePrice: data.purchasePrice }),
       ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
-      ...(data.stockQty !== undefined && { stockQty: data.stockQty }),
-      ...(data.minStock !== undefined && { minStock: data.minStock }),
       ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
     };
 
-    return db.repairSpareProduct.create({ data: createData });
+    const newProduct = await db.repairSpareProduct.create({ data: createData });
+    return newProduct;
   },
 
   async updateSpareProduct(id: string, data: UpdateSpareProductData) {
@@ -146,8 +161,16 @@ export const repairSpareService = {
     if (!product) throw new AppError('Spare product not found', 404);
 
     if (data.sku && data.sku !== product.sku) {
-      if (await db.repairSpareProduct.findUnique({ where: { sku: data.sku } })) {
-        throw new AppError('SKU already exists', 409);
+      const existing = await db.repairSpareProduct.findUnique({
+        where: {
+          branchId_sku: {
+            branchId: product.branchId,
+            sku: data.sku,
+          }
+        }
+      });
+      if (existing) {
+        throw new AppError('SKU already exists in this branch', 409);
       }
     }
 
@@ -162,13 +185,14 @@ export const repairSpareService = {
       ...(data.compatibleDevices !== undefined && { compatibleDevices: data.compatibleDevices }),
       ...(data.purchasePrice !== undefined && { purchasePrice: data.purchasePrice }),
       ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
-      ...(data.stockQty !== undefined && { stockQty: data.stockQty }),
-      ...(data.minStock !== undefined && { minStock: data.minStock }),
       ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
       ...(data.isAvailable !== undefined && { isAvailable: data.isAvailable }),
+      ...(data.stockQty !== undefined && { stockQty: data.stockQty }),
+      ...(data.minStock !== undefined && { minStock: data.minStock }),
     };
 
-    return db.repairSpareProduct.update({ where: { id }, data: updateData });
+    const updatedProduct = await db.repairSpareProduct.update({ where: { id }, data: updateData });
+    return updatedProduct;
   },
 
   async deleteSpareProduct(id: string) {
@@ -183,10 +207,14 @@ export const repairSpareService = {
   async getAllSparePurchases(filters?: SparePurchaseFilters) {
     const where: any = {};
     if (filters?.startDate && filters?.endDate) {
-      where.createdAt = {
+      where.purchaseDate = {
         gte: new Date(filters.startDate + 'T00:00:00.000Z'),
         lte: new Date(filters.endDate + 'T23:59:59.999Z'),
       };
+    }
+    // Scope by branch for MANAGER callers
+    if (filters?.branchId) {
+      where.branchId = filters.branchId;
     }
 
     return db.repairSparePurchase.findMany({
@@ -262,19 +290,18 @@ export const repairSpareService = {
         },
       });
 
-      // Update stock for each item, and also set selling price if provided
+      // Update stock directly on RepairSpareProduct
       for (const item of items) {
+        const updateData: any = {
+          stockQty: { increment: item.quantity }
+        };
         if (item.sellingPrice && item.sellingPrice > 0) {
-          await tx.repairSpareProduct.update({
-            where: { id: item.spareProductId },
-            data: { sellingPrice: item.sellingPrice },
-          });
+          updateData.sellingPrice = item.sellingPrice;
         }
-        
-        await tx.branchRepairSpareStock.upsert({
-          where: { branchId_spareProductId: { branchId, spareProductId: item.spareProductId } },
-          update: { stockQty: { increment: item.quantity } },
-          create: { branchId, spareProductId: item.spareProductId, stockQty: item.quantity }
+
+        await tx.repairSpareProduct.update({
+          where: { id: item.spareProductId },
+          data: updateData,
         });
       }
 
@@ -295,8 +322,8 @@ export const repairSpareService = {
       });
 
       for (const item of items) {
-        await tx.branchRepairSpareStock.update({
-          where: { branchId_spareProductId: { branchId: purchase.branchId, spareProductId: item.spareProductId } },
+        await tx.repairSpareProduct.update({
+          where: { id: item.spareProductId },
           data: { stockQty: { decrement: item.quantity } },
         });
       }

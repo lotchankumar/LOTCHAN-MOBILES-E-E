@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.orderController = void 0;
 const order_service_1 = require("../services/order.service");
 const client_1 = __importDefault(require("../prisma/client"));
+const auditLog_service_1 = require("../services/auditLog.service");
 exports.orderController = {
     async createOrder(req, res) {
         try {
@@ -20,6 +21,16 @@ exports.orderController = {
                 paymentMethod: paymentMethod,
                 staffId,
                 branchId: req.body.branchId || user?.branchId
+            });
+            // Log order creation
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'ORDER_CREATED',
+                entity: 'Order',
+                entityId: order.id,
+                details: JSON.stringify({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, paymentMethod }),
+                branchId: req.body.branchId || user?.branchId,
+                ipAddress: req.ip,
             });
             res.status(201).json(order);
         }
@@ -134,9 +145,20 @@ exports.orderController = {
         try {
             const id = req.params.id;
             const { status } = req.body;
+            const user = req.user;
             const order = await client_1.default.order.update({
                 where: { id },
                 data: { status }
+            });
+            // Log status update
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'ORDER_STATUS_UPDATED',
+                entity: 'Order',
+                entityId: id,
+                details: JSON.stringify({ orderNumber: order.orderNumber, newStatus: status }),
+                branchId: user?.branchId,
+                ipAddress: req.ip,
             });
             res.json(order);
         }
