@@ -6,7 +6,10 @@ import prisma from '../prisma/client';
 
 export const staffController = {
   async getAllStaff(req: Request, res: Response) {
-    const staff = await staffService.getAllStaff();
+    const loggedInUser = (req as any).user;
+    // MANAGERs only see staff within their own branch; ADMINs see all
+    const branchId = loggedInUser.role === 'MANAGER' ? loggedInUser.branchId : undefined;
+    const staff = await staffService.getAllStaff(branchId);
     res.json(staff);
   },
 

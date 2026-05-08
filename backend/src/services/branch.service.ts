@@ -5,12 +5,14 @@ export type CreateBranchData = {
   name: string;
   address?: string;
   phone?: string;
+  isActive?: boolean;
 };
 
 export type UpdateBranchData = {
   name?: string;
   address?: string;
   phone?: string;
+  isActive?: boolean;
 };
 
 export const branchService = {
@@ -59,10 +61,6 @@ export const branchService = {
 
     if (!branch) {
       throw new Error('Branch not found');
-    }
-
-    if (branch._count.users > 0 || branch._count.orders > 0) {
-      throw new Error('Cannot delete branch with associated users or orders');
     }
 
     return prisma.branch.delete({ where: { id } });

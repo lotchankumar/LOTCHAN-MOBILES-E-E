@@ -61,41 +61,82 @@ router.post('/categories', auth_middleware_1.authenticate, (0, auth_middleware_1
         res.status(error.statusCode || error.status || 500).json({ error: error.message || 'Failed to create category' });
     }
 });
-// Manager Inventory (enhanced)
+// Manager Product Inventory (branch-scoped, normal products ONLY — repair spares have their own endpoint)
 router.get('/inventory', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), async (req, res) => {
     try {
+        const authUser = req.user;
+        const branchId = authUser.role === 'MANAGER' ? authUser.branchId : req.query.branchId;
+        // Fetch normal products ONLY (repair spares are served by /repair-spare-products)
         const products = await inventory_service_1.inventoryService.getProducts({
             ...(req.query.category && { category: req.query.category }),
             ...(req.query.categoryId && { categoryId: req.query.categoryId }),
-            ...(req.query.search && { search: req.query.search })
+            ...(req.query.search && { search: req.query.search }),
+            ...(branchId && { branchId }),
         });
         // Transform for frontend
-        const transformed = products.map((p) => ({
-            id: p.id,
-            category: p.category,
-            categoryId: p.categoryType?.id,
-            categoryName: p.categoryType?.name,
-            supplierId: p.supplier?.id,
-            supplierName: p.supplier?.name,
-            brand: p.brand,
-            model: p.model || '',
-            sku: p.sku,
-            costPrice: p.cost,
-            sellingPrice: p.price,
-            stockQuantity: p.stockQty,
-            reorderLevel: p.minStock,
-            createdAt: p.createdAt,
-            needsReorder: p.stockQty <= p.minStock,
-        }));
+        const transformed = [];
+        for (const p of products) {
+            if (!branchId && p.branchStocks && p.branchStocks.length > 0) {
+                // Admin view across all branches: flatten so each branch has its own row
+                for (const bs of p.branchStocks) {
+                    transformed.push({
+                        id: `${p.id}-${bs.branchId}`,
+                        originalId: p.id,
+                        category: p.category,
+                        categoryId: p.categoryType?.id,
+                        categoryName: p.categoryType?.name,
+                        supplierId: p.supplier?.id,
+                        supplierName: p.supplier?.name,
+                        brand: p.brand,
+                        model: p.model || '',
+                        sku: p.sku,
+                        costPrice: p.cost,
+                        sellingPrice: p.price,
+                        stockQuantity: bs.stockQty,
+                        reorderLevel: bs.minStock,
+                        createdAt: p.createdAt,
+                        needsReorder: bs.stockQty <= bs.minStock,
+                        branchName: bs.branch?.name || 'Unknown',
+                        type: 'NORMAL'
+                    });
+                }
+            }
+            else {
+                // Manager view (filtered by branch) OR global product with no stock
+                transformed.push({
+                    id: p.id,
+                    originalId: p.id,
+                    category: p.category,
+                    categoryId: p.categoryType?.id,
+                    categoryName: p.categoryType?.name,
+                    supplierId: p.supplier?.id,
+                    supplierName: p.supplier?.name,
+                    brand: p.brand,
+                    model: p.model || '',
+                    sku: p.sku,
+                    costPrice: p.cost,
+                    sellingPrice: p.price,
+                    stockQuantity: p.stockQty,
+                    reorderLevel: p.minStock,
+                    createdAt: p.createdAt,
+                    needsReorder: p.stockQty <= p.minStock,
+                    branchName: p.branchStocks?.[0]?.branch?.name || (branchId ? 'Unknown' : 'Global (No Stock)'),
+                    type: 'NORMAL'
+                });
+            }
+        }
         res.json({ success: true, data: transformed });
     }
     catch (error) {
+        console.error('Inventory fetch error:', error);
         res.status(500).json({ error: 'Failed to fetch inventory' });
     }
 });
 router.get('/low-stock', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), async (req, res) => {
     try {
-        const products = await inventory_service_1.inventoryService.getLowStockProducts();
+        const authUser = req.user;
+        const branchId = authUser.role === 'MANAGER' ? authUser.branchId : req.query.branchId;
+        const products = await inventory_service_1.inventoryService.getLowStockProducts(branchId);
         const transformed = products.map((p) => ({
             id: p.id,
             category: p.category,
@@ -120,16 +161,30 @@ router.get('/low-stock', auth_middleware_1.authenticate, (0, auth_middleware_1.r
     }
 });
 // ===== Repair Spare Parts Routes =====
-// Spare Products
-router.get('/repair-spare-products', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), repairSpare_controller_1.repairSpareController.getAllSpareProducts);
-router.get('/repair-spare-products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), repairSpare_controller_1.repairSpareController.getSpareProductById);
-router.post('/repair-spare-products', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), repairSpare_controller_1.repairSpareController.createSpareProduct);
-router.patch('/repair-spare-products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), repairSpare_controller_1.repairSpareController.updateSpareProduct);
-router.delete('/repair-spare-products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), repairSpare_controller_1.repairSpareController.deleteSpareProduct);
-// Spare Purchases
-router.post('/repair-spare-purchases', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), repairSpare_controller_1.repairSpareController.createSparePurchase);
-router.get('/repair-spare-purchases', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), repairSpare_controller_1.repairSpareController.getAllSparePurchases);
-router.get('/repair-spare-purchases/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), repairSpare_controller_1.repairSpareController.getSparePurchaseById);
-router.delete('/repair-spare-purchases/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), repairSpare_controller_1.repairSpareController.deleteSparePurchase);
+// Inject branch scope for MANAGER callers before hitting the controller
+const injectManagerBranch = (req, _res, next) => {
+    const authUser = req.user;
+    if ((authUser?.role === 'MANAGER' || authUser?.role === 'ADMIN') && authUser.branchId) {
+        // If the frontend didn't supply a branchId (or for MANAGERs who shouldn't override), inject the auth user's branch
+        if (authUser.role === 'MANAGER' || !req.query?.branchId) {
+            req.managerBranchId = authUser.branchId;
+            if (req.body && typeof req.body === 'object') {
+                req.body.branchId = authUser.branchId;
+            }
+        }
+    }
+    next();
+};
+// Spare Products (branch-scoped for MANAGERs)
+router.get('/repair-spare-products', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.getAllSpareProducts);
+router.get('/repair-spare-products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.getSpareProductById);
+router.post('/repair-spare-products', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.createSpareProduct);
+router.patch('/repair-spare-products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.updateSpareProduct);
+router.delete('/repair-spare-products/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.deleteSpareProduct);
+// Spare Purchases (branch-scoped for MANAGERs)
+router.post('/repair-spare-purchases', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.createSparePurchase);
+router.get('/repair-spare-purchases', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.getAllSparePurchases);
+router.get('/repair-spare-purchases/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['MANAGER', 'ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.getSparePurchaseById);
+router.delete('/repair-spare-purchases/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.requireRole)(['ADMIN']), injectManagerBranch, repairSpare_controller_1.repairSpareController.deleteSparePurchase);
 exports.default = router;
 //# sourceMappingURL=manager.routes.js.map

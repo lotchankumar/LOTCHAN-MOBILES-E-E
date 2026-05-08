@@ -45,8 +45,8 @@ export declare const purchaseOrderService: {
         })[];
     } & {
         id: string;
-        branchId: string | null;
         createdAt: Date;
+        branchId: string | null;
         updatedAt: Date;
         notes: string | null;
         supplierId: string;
@@ -63,23 +63,24 @@ export declare const purchaseOrderService: {
         } | null;
         stockMovements: {
             id: string;
-            branchId: string;
             createdAt: Date;
+            userId: string | null;
+            branchId: string;
             type: import(".prisma/client").$Enums.MovementType;
             reference: string | null;
             productId: string;
             quantity: number;
             purchaseOrderId: string | null;
-            userId: string | null;
         }[];
         supplier: {
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string | null;
             isActive: boolean;
-            createdAt: Date;
-            phone: string | null;
             address: string | null;
+            phone: string | null;
             updatedAt: Date;
             contactName: string | null;
             notes: string | null;
@@ -119,8 +120,8 @@ export declare const purchaseOrderService: {
         })[];
     } & {
         id: string;
-        branchId: string | null;
         createdAt: Date;
+        branchId: string | null;
         updatedAt: Date;
         notes: string | null;
         supplierId: string;
@@ -155,8 +156,8 @@ export declare const purchaseOrderService: {
         })[];
     } & {
         id: string;
-        branchId: string | null;
         createdAt: Date;
+        branchId: string | null;
         updatedAt: Date;
         notes: string | null;
         supplierId: string;
@@ -187,8 +188,8 @@ export declare const purchaseOrderService: {
         })[];
     } & {
         id: string;
-        branchId: string | null;
         createdAt: Date;
+        branchId: string | null;
         updatedAt: Date;
         notes: string | null;
         supplierId: string;
@@ -219,8 +220,8 @@ export declare const purchaseOrderService: {
         })[];
     } & {
         id: string;
-        branchId: string | null;
         createdAt: Date;
+        branchId: string | null;
         updatedAt: Date;
         notes: string | null;
         supplierId: string;

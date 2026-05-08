@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import { AppError } from '../middleware/error.middleware';
 import { cacheService } from '../services/cache.service';
+import { auditLogService } from '../services/auditLog.service';
 
 export const purchaseController = {
   async createPurchase(req: Request, res: Response) {
@@ -144,17 +145,15 @@ export const purchaseController = {
           
           // Update stock for each spare item
           for (const item of spareItems) {
+            const updateData: any = {
+              stockQty: { increment: item.quantity }
+            };
             if (item.sellingPrice && item.sellingPrice > 0) {
-              await tx.repairSpareProduct.update({
-                where: { id: item.spareProductId },
-                data: { sellingPrice: item.sellingPrice },
-              });
+              updateData.sellingPrice = item.sellingPrice;
             }
-            // Increment branch spare stock
-            await tx.branchRepairSpareStock.upsert({
-              where: { branchId_spareProductId: { branchId, spareProductId: item.spareProductId } },
-              update: { stockQty: { increment: item.quantity } },
-              create: { branchId, spareProductId: item.spareProductId, stockQty: item.quantity }
+            await tx.repairSpareProduct.update({
+              where: { id: item.spareProductId },
+              data: updateData,
             });
           }
         }
@@ -200,6 +199,18 @@ export const purchaseController = {
       // Invalidate products cache since stock quantities or new products were added
       await cacheService.invalidatePattern('products:*');
       await cacheService.invalidatePattern('product:*');
+
+      // Log purchase creation
+      const user = (req as any).user;
+      auditLogService.logAction({
+        userId: user?.id || managerId,
+        action: 'PURCHASE_CREATED',
+        entity: 'Purchase',
+        entityId: purchase.purchase?.id || purchase.sparePurchase?.id || undefined,
+        details: JSON.stringify({ invoiceNo, supplier, totalAmount, productItems: items?.length || 0, spareItems: spareItems?.length || 0 }),
+        branchId: branchId,
+        ipAddress: req.ip,
+      });
 
       res.status(201).json({ success: true, data: purchase });
     } catch (error: any) {

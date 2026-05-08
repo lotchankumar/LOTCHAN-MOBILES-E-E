@@ -32,19 +32,20 @@ export declare const baseManagerService: {
             name: string;
             id: string;
             createdAt: Date;
-            phone: string | null;
+            isActive: boolean;
             address: string | null;
+            phone: string | null;
         } | null;
     } & {
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string;
         passwordHash: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
-        branchId: string | null;
         managerId: string | null;
-        createdAt: Date;
     })[]>;
     createManager(data: CreateManagerData): Promise<User>;
     updateManager(id: string, data: UpdateManagerData): Promise<{
@@ -52,19 +53,20 @@ export declare const baseManagerService: {
             name: string;
             id: string;
             createdAt: Date;
-            phone: string | null;
+            isActive: boolean;
             address: string | null;
+            phone: string | null;
         } | null;
     } & {
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string;
         passwordHash: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
-        branchId: string | null;
         managerId: string | null;
-        createdAt: Date;
     }>;
     resetPassword(id: string): Promise<{
         success: true;
@@ -73,13 +75,14 @@ export declare const baseManagerService: {
     getManagerById(id: string): Promise<User | null>;
 };
 export declare const staffService: {
-    getAllStaff(): Promise<({
+    getAllStaff(branchId?: string): Promise<({
         branch: {
             name: string;
             id: string;
             createdAt: Date;
-            phone: string | null;
+            isActive: boolean;
             address: string | null;
+            phone: string | null;
         } | null;
         manager: {
             name: string;
@@ -89,13 +92,13 @@ export declare const staffService: {
     } & {
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string;
         passwordHash: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
-        branchId: string | null;
         managerId: string | null;
-        createdAt: Date;
     })[]>;
     createStaff(data: CreateStaffData): Promise<User>;
     updateStaff(id: string, data: UpdateStaffData): Promise<{
@@ -103,19 +106,20 @@ export declare const staffService: {
             name: string;
             id: string;
             createdAt: Date;
-            phone: string | null;
+            isActive: boolean;
             address: string | null;
+            phone: string | null;
         } | null;
     } & {
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string;
         passwordHash: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
-        branchId: string | null;
         managerId: string | null;
-        createdAt: Date;
     }>;
     resetStaffPassword(id: string): Promise<{
         success: true;
@@ -131,56 +135,59 @@ export declare const organizationService: {
                         name: string;
                         id: string;
                         createdAt: Date;
-                        phone: string | null;
+                        isActive: boolean;
                         address: string | null;
+                        phone: string | null;
                     } | null;
                 } & {
                     name: string;
                     id: string;
+                    createdAt: Date;
+                    branchId: string | null;
                     email: string;
                     passwordHash: string;
                     role: import(".prisma/client").$Enums.Role;
                     isActive: boolean;
-                    branchId: string | null;
                     managerId: string | null;
-                    createdAt: Date;
                 })[];
             } & {
                 name: string;
                 id: string;
+                createdAt: Date;
+                branchId: string | null;
                 email: string;
                 passwordHash: string;
                 role: import(".prisma/client").$Enums.Role;
                 isActive: boolean;
-                branchId: string | null;
                 managerId: string | null;
-                createdAt: Date;
             })[];
         } & {
             name: string;
             id: string;
             createdAt: Date;
-            phone: string | null;
+            isActive: boolean;
             address: string | null;
+            phone: string | null;
         })[];
         unassignedStaff: ({
             branch: {
                 name: string;
                 id: string;
                 createdAt: Date;
-                phone: string | null;
+                isActive: boolean;
                 address: string | null;
+                phone: string | null;
             } | null;
         } & {
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string;
             passwordHash: string;
             role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
-            branchId: string | null;
             managerId: string | null;
-            createdAt: Date;
         })[];
     }>;
 };
@@ -269,19 +276,20 @@ declare const managerService: {
             name: string;
             id: string;
             createdAt: Date;
-            phone: string | null;
+            isActive: boolean;
             address: string | null;
+            phone: string | null;
         } | null;
     } & {
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string;
         passwordHash: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
-        branchId: string | null;
         managerId: string | null;
-        createdAt: Date;
     })[]>;
     createManager(data: CreateManagerData): Promise<User>;
     updateManager(id: string, data: UpdateManagerData): Promise<{
@@ -289,19 +297,20 @@ declare const managerService: {
             name: string;
             id: string;
             createdAt: Date;
-            phone: string | null;
+            isActive: boolean;
             address: string | null;
+            phone: string | null;
         } | null;
     } & {
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string;
         passwordHash: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
-        branchId: string | null;
         managerId: string | null;
-        createdAt: Date;
     }>;
     resetPassword(id: string): Promise<{
         success: true;

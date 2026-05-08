@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.managerController = void 0;
 const manager_service_1 = require("../services/manager.service");
 const error_middleware_1 = require("../middleware/error.middleware");
+const auditLog_service_1 = require("../services/auditLog.service");
 exports.managerController = {
     async getAllManagers(req, res) {
         const managers = await manager_service_1.managerService.getAllManagers();
@@ -10,10 +11,32 @@ exports.managerController = {
     },
     async createManager(req, res) {
         const manager = await manager_service_1.managerService.createManager(req.body);
+        const user = req.user;
+        // Log user creation
+        auditLog_service_1.auditLogService.logAction({
+            userId: user?.id,
+            action: 'USER_CREATED',
+            entity: 'User',
+            entityId: manager.id,
+            details: JSON.stringify({ name: req.body.name, email: req.body.email, role: req.body.role || 'MANAGER' }),
+            branchId: user?.branchId,
+            ipAddress: req.ip,
+        });
         res.status(201).json(manager);
     },
     async updateManager(req, res) {
         const manager = await manager_service_1.managerService.updateManager(req.params.id, req.body);
+        const user = req.user;
+        // Log user update
+        auditLog_service_1.auditLogService.logAction({
+            userId: user?.id,
+            action: 'USER_UPDATED',
+            entity: 'User',
+            entityId: req.params.id,
+            details: JSON.stringify(req.body),
+            branchId: user?.branchId,
+            ipAddress: req.ip,
+        });
         res.json(manager);
     },
     async resetPassword(req, res) {

@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useAuthStore } from '../../store/auth.store';
 import { UserRole } from '../../types';
 import type { BranchWithCount } from '../../hooks/useManagers';
-import { useBranchesQuery, useCreateBranch, useUpdateBranch, useDeleteBranch } from '../../hooks/useManagers';
-import { Plus, Edit3, Trash2, ChevronDown, XCircle, AlertCircle } from 'lucide-react';
-import { BackButton } from '../../components/BackButton';
+import { useBranchesQuery, useCreateBranch, useUpdateBranch, useDeleteBranch, useRequestDeleteBranchOtp } from '../../hooks/useManagers';
+import { Plus, Edit3, Trash2, XCircle, AlertCircle, Power } from 'lucide-react';
 
 const BranchesPage = () => {
   const { user } = useAuthStore();
@@ -19,13 +18,17 @@ const BranchesPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
-    phone: ''
+    phone: '',
+    isActive: true
   });
-  const [showConfirm, setShowConfirm] = useState(false);
   const [confirmActionId, setConfirmActionId] = useState('');
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const { requestOtp, loading: requestingOtp } = useRequestDeleteBranchOtp();
 
   const openAddModal = () => {
-    setFormData({ name: '', address: '', phone: '' });
+    setFormData({ name: '', address: '', phone: '', isActive: true });
     setEditMode(false);
     setEditingBranch(null);
     setShowModal(true);
@@ -35,7 +38,8 @@ const BranchesPage = () => {
     setFormData({
       name: branch.name,
       address: branch.address || '',
-      phone: branch.phone || ''
+      phone: branch.phone || '',
+      isActive: branch.isActive
     });
     setEditMode(true);
     setEditingBranch(branch);
@@ -56,17 +60,37 @@ const BranchesPage = () => {
     }
   };
 
-  const handleDeleteConfirm = (id: string) => {
+  const handleDeleteConfirm = async (id: string) => {
     setConfirmActionId(id);
-    setShowConfirm(true);
+    setOtpError('');
+    try {
+      await requestOtp(id);
+      setShowOtpModal(true);
+    } catch (err: any) {
+      // Error handled by hook, or we could set global error
+      alert(err?.response?.data?.message || 'Failed to request OTP');
+    }
+  };
+
+  const handleToggleStatus = async (branch: BranchWithCount) => {
+    try {
+      await updateBranchMutation(branch.id, { isActive: !branch.isActive }, refetchBranches);
+    } catch (err) {
+      // Error handled in mutation
+    }
   };
 
   const confirmDelete = async () => {
+    if (!otp || otp.length < 6) {
+      setOtpError('Please enter a valid 6-digit OTP');
+      return;
+    }
     try {
-      await deleteBranchMutation(confirmActionId, refetchBranches);
-      setShowConfirm(false);
-    } catch (err) {
-      // Error handled in mutation
+      await deleteBranchMutation(confirmActionId, otp, refetchBranches);
+      setShowOtpModal(false);
+      setOtp('');
+    } catch (err: any) {
+      setOtpError(err?.response?.data?.message || 'Invalid or expired OTP');
     }
   };
 
@@ -104,6 +128,7 @@ const BranchesPage = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Phone</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Staff</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Orders</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#7892b7] uppercase tracking-wider">Created</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-[#7892b7] uppercase tracking-wider">Actions</th>
                 </tr>
@@ -111,13 +136,13 @@ const BranchesPage = () => {
               <tbody className="bg-transparent divide-y divide-white/10">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-[#7892b7]">
+                    <td colSpan={8} className="px-6 py-12 text-center text-[#7892b7]">
                       Loading branches...
                     </td>
                   </tr>
                 ) : branches.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-[#7892b7]">
+                    <td colSpan={8} className="px-6 py-12 text-center text-[#7892b7]">
                       No branches found. Create one to get started.
                     </td>
                   </tr>
@@ -129,11 +154,23 @@ const BranchesPage = () => {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch.phone || '-'}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.users || 0}</td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-[#d2e4ff]">{branch._count?.orders || 0}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${branch.isActive ? 'bg-green-100/10 text-green-400' : 'bg-red-100/10 text-red-400'}`}>
+                          {branch.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-[#7892b7]">
                         {new Date(branch.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div className="flex items-center justify-center gap-3">
+                          <button
+                            onClick={() => handleToggleStatus(branch)}
+                            className={`${branch.isActive ? 'text-green-400 hover:text-green-300' : 'text-red-400 hover:text-red-300'} transition-colors`}
+                            title={branch.isActive ? 'Deactivate' : 'Activate'}
+                          >
+                            <Power className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => openEditModal(branch)}
                             className="text-[#aec8f0] hover:text-white transition-colors"
@@ -143,7 +180,8 @@ const BranchesPage = () => {
                           </button>
                           <button
                             onClick={() => handleDeleteConfirm(branch.id)}
-                            className="text-destructive hover:text-red-400 transition-colors"
+                            disabled={requestingOtp && confirmActionId === branch.id}
+                            className={`${requestingOtp && confirmActionId === branch.id ? 'text-slate-500' : 'text-destructive hover:text-red-400'} transition-colors`}
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -212,6 +250,18 @@ const BranchesPage = () => {
                   className="w-full px-3 py-2 border border-white/10 rounded-md bg-[#0b2a4a] text-[#d2e4ff] focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
               </div>
+              <div className="flex items-center space-x-2 pt-2">
+                <input
+                  id="isActive"
+                  type="checkbox"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="w-4 h-4 rounded border-white/10 bg-[#0b2a4a] text-[#aec8f0] focus:ring-ring focus:ring-offset-0 focus:ring-offset-transparent"
+                />
+                <label htmlFor="isActive" className="text-sm font-medium text-[#7892b7]">
+                  Branch is active
+                </label>
+              </div>
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
@@ -233,36 +283,50 @@ const BranchesPage = () => {
         </div>
       )}
 
-      {/* Delete Confirm Dialog */}
-      {showConfirm && (
+      {/* OTP Delete Dialog */}
+      {showOtpModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-transparent rounded-lg p-6 w-full max-w-md">
+          <div className="bg-[#0a192f] border border-white/10 rounded-lg p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-start mb-6">
               <div className="flex-shrink-0">
                 <AlertCircle className="h-6 w-6 text-warning mt-0.5" />
               </div>
               <div className="ml-3 flex-1">
                 <h3 className="text-lg font-medium text-[#d2e4ff]">
-                  Confirm Delete
+                  Verify Deletion
                 </h3>
                 <p className="mt-2 text-sm text-[#7892b7]">
-                  This branch cannot be deleted if it has associated staff or orders. This action cannot be undone.
+                  An OTP has been sent to your admin email. Please enter it below to permanently delete this branch.
                 </p>
               </div>
             </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-[#7892b7] mb-2">OTP Code</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => { setOtp(e.target.value); setOtpError(''); }}
+                className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-lg text-white font-mono text-center tracking-[0.5em] text-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                placeholder="------"
+              />
+              {otpError && <p className="mt-2 text-sm text-red-400">{otpError}</p>}
+            </div>
+
             <div className="flex space-x-3">
               <button
-                onClick={() => setShowConfirm(false)}
+                onClick={() => { setShowOtpModal(false); setOtp(''); setOtpError(''); }}
                 className="flex-1 px-4 py-2 border border-white/10 text-[#7892b7] rounded-md hover:bg-white/5 text-[#d2e4ff] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                disabled={loading}
+                disabled={loading || otp.length < 6}
                 className="flex-1 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 font-medium flex items-center justify-center disabled:opacity-50"
               >
-                {loading ? 'Deleting...' : 'Delete Branch'}
+                {loading ? 'Verifying...' : 'Delete Branch'}
               </button>
             </div>
           </div>

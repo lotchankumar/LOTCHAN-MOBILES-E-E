@@ -5,6 +5,7 @@ export interface CreateSupplierData {
     phone?: string;
     address?: string;
     notes?: string;
+    branchId?: string;
 }
 export interface UpdateSupplierData {
     name?: string;
@@ -25,8 +26,12 @@ export interface CreatePaymentData {
     managerId?: string;
 }
 export declare const supplierService: {
-    getAllSuppliers(): Promise<{
+    getAllSuppliers(branchId?: string): Promise<{
         totalPaid: number;
+        branch: {
+            name: string;
+            id: string;
+        } | null;
         _count: {
             products: number;
         };
@@ -35,11 +40,12 @@ export declare const supplierService: {
         }[];
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string | null;
         isActive: boolean;
-        createdAt: Date;
-        phone: string | null;
         address: string | null;
+        phone: string | null;
         updatedAt: Date;
         contactName: string | null;
         notes: string | null;
@@ -48,11 +54,14 @@ export declare const supplierService: {
     getSupplierById(id: string): Promise<{
         productCount: number;
         totalPaid: number;
+        branch: {
+            name: string;
+            id: string;
+        } | null;
         products: {
             name: string;
             id: string;
             sku: string;
-            stockQty: never;
         }[];
         payments: {
             id: string;
@@ -66,11 +75,12 @@ export declare const supplierService: {
         }[];
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string | null;
         isActive: boolean;
-        createdAt: Date;
-        phone: string | null;
         address: string | null;
+        phone: string | null;
         updatedAt: Date;
         contactName: string | null;
         notes: string | null;
@@ -79,11 +89,12 @@ export declare const supplierService: {
     createSupplier(data: CreateSupplierData): Promise<{
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string | null;
         isActive: boolean;
-        createdAt: Date;
-        phone: string | null;
         address: string | null;
+        phone: string | null;
         updatedAt: Date;
         contactName: string | null;
         notes: string | null;
@@ -92,11 +103,12 @@ export declare const supplierService: {
     updateSupplier(id: string, data: UpdateSupplierData): Promise<{
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string | null;
         isActive: boolean;
-        createdAt: Date;
-        phone: string | null;
         address: string | null;
+        phone: string | null;
         updatedAt: Date;
         contactName: string | null;
         notes: string | null;
@@ -121,17 +133,22 @@ export declare const supplierService: {
             reference: string | null;
             paymentDate: Date;
         }[];
+        branch: {
+            name: string;
+            id: string;
+        } | null;
         _count: {
             purchases: number;
             products: number;
         };
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string | null;
         isActive: boolean;
-        createdAt: Date;
-        phone: string | null;
         address: string | null;
+        phone: string | null;
         updatedAt: Date;
         contactName: string | null;
         notes: string | null;

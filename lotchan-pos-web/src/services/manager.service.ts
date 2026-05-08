@@ -59,6 +59,8 @@ export interface ProductInventory {
   supplier?: { id: string; name: string };
   supplierId?: string;
   supplierName?: string;
+  branchName?: string;
+  type?: 'NORMAL' | 'REPAIR';
 }
 
 export interface PurchaseItem {
@@ -95,6 +97,8 @@ export interface Supplier {
   address?: string;
   creditBalance: number;
   totalPaid: number;
+  branchId?: string;
+  branchName?: string;
 }
 
 export interface RecordSupplierPaymentRequest {
@@ -293,9 +297,11 @@ export const managerService = {
   },
 
   // Inventory
-  async getInventory(): Promise<ProductInventory[]> {
+  async getInventory(branchId?: string): Promise<ProductInventory[]> {
     try {
-      const response = await api.get('/admin/inventory');
+      const response = await api.get('/admin/inventory', {
+        params: { ...(branchId && { branchId }) }
+      });
       return extractResponseData<ProductInventory[]>(response);
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to fetch inventory');
@@ -441,7 +447,7 @@ export const managerService = {
       const response = await api.post('/admin/repair-spare-products', data);
       return extractResponseData<RepairSpareProduct>(response);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to create repair spare product');
+      throw new Error(error.response?.data?.error || error.response?.data?.message || 'Failed to create repair spare product');
     }
   },
 

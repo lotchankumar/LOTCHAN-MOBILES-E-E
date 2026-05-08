@@ -143,9 +143,12 @@ export const baseManagerService = {
 };
 
 export const staffService = {
-  async getAllStaff() {
+  async getAllStaff(branchId?: string) {
     return prisma.user.findMany({
-      where: { role: { in: ['STAFF', 'TECHNICIAN'] } },
+      where: {
+        role: { in: ['STAFF', 'TECHNICIAN'] },
+        ...(branchId && { branchId }),
+      },
       include: {
         branch: true,
         manager: {

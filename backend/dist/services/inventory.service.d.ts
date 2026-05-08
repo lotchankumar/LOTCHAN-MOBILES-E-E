@@ -66,11 +66,11 @@ declare function incrementStock(tx: Prisma.TransactionClient, productId: string,
 }): Promise<void>;
 declare function adjustStock(productId: string, quantity: number, reason: string, branchId: string, userId?: string | null): Promise<{
     id: string;
-    branchId: string;
     createdAt: Date;
+    branchId: string;
     updatedAt: Date;
-    stockQty: number;
     productId: string;
+    stockQty: number;
     minStock: number;
 }>;
 declare function getLowStockProducts(branchId?: string): Promise<{
@@ -105,38 +105,40 @@ declare function getLowStockProducts(branchId?: string): Promise<{
             name: string;
             id: string;
             createdAt: Date;
+            branchId: string;
             updatedAt: Date;
             description: string | null;
             supplierId: string | null;
             sku: string;
-            category: import(".prisma/client").$Enums.Category;
             categoryId: string | null;
             brand: string;
             model: string | null;
-            price: number;
-            cost: number;
             imageUrl: string | null;
             isAvailable: boolean;
-            showInPosApp: boolean;
-            showInCustomerApp: boolean;
+            stockQty: number;
+            minStock: number;
+            sellingPrice: number;
+            compatibleDevices: string | null;
+            purchasePrice: number;
         } | {
             name: string;
             id: string;
             createdAt: Date;
+            branchId: string;
             updatedAt: Date;
             description: string | null;
             supplierId: string | null;
             sku: string;
-            category: import(".prisma/client").$Enums.Category;
             categoryId: string | null;
             brand: string;
             model: string | null;
-            price: number;
-            cost: number;
             imageUrl: string | null;
             isAvailable: boolean;
-            showInPosApp: boolean;
-            showInCustomerApp: boolean;
+            stockQty: number;
+            minStock: number;
+            sellingPrice: number;
+            compatibleDevices: string | null;
+            purchasePrice: number;
         })[] | ({
             name: string;
             id: string;
@@ -145,14 +147,16 @@ declare function getLowStockProducts(branchId?: string): Promise<{
             description: string | null;
             supplierId: string | null;
             sku: string;
+            category: import(".prisma/client").$Enums.Category;
             categoryId: string | null;
             brand: string;
             model: string | null;
+            price: number;
+            cost: number;
             imageUrl: string | null;
             isAvailable: boolean;
-            sellingPrice: number;
-            compatibleDevices: string | null;
-            purchasePrice: number;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
         } | {
             name: string;
             id: string;
@@ -161,18 +165,21 @@ declare function getLowStockProducts(branchId?: string): Promise<{
             description: string | null;
             supplierId: string | null;
             sku: string;
+            category: import(".prisma/client").$Enums.Category;
             categoryId: string | null;
             brand: string;
             model: string | null;
+            price: number;
+            cost: number;
             imageUrl: string | null;
             isAvailable: boolean;
-            sellingPrice: number;
-            compatibleDevices: string | null;
-            purchasePrice: number;
+            showInPosApp: boolean;
+            showInCustomerApp: boolean;
         })[] | {
             name: string;
             id: string;
             createdAt: Date;
+            branchId: string;
             updatedAt: Date;
             description: string | null;
             supplierId: string | null;
@@ -182,6 +189,8 @@ declare function getLowStockProducts(branchId?: string): Promise<{
             model: string | null;
             imageUrl: string | null;
             isAvailable: boolean;
+            stockQty: number;
+            minStock: number;
             sellingPrice: number;
             compatibleDevices: string | null;
             purchasePrice: number;
@@ -189,15 +198,6 @@ declare function getLowStockProducts(branchId?: string): Promise<{
         [x: number]: never;
         [x: symbol]: never;
     } | null;
-    branchStocks: {
-        id: string;
-        branchId: string;
-        createdAt: Date;
-        updatedAt: Date;
-        stockQty: number;
-        productId: string;
-        minStock: number;
-    }[];
     name: string;
     id: string;
     createdAt: Date;
@@ -234,158 +234,28 @@ declare function getStockValuation(groupBy?: 'category', branchId?: string): Pro
     totalUnits: any;
     byCategory?: undefined;
 }>;
-declare function getProducts(filters?: ProductFilters): Promise<{
-    stockQty: number;
-    minStock: number;
-    supplier: {
-        name: string;
-        id: string;
-    } | null;
-    categoryType: {
-        [x: string]: {
-            name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            description: string | null;
-            supplierId: string | null;
-            sku: string;
-            category: import(".prisma/client").$Enums.Category;
-            categoryId: string | null;
-            brand: string;
-            model: string | null;
-            price: number;
-            cost: number;
-            imageUrl: string | null;
-            isAvailable: boolean;
-            showInPosApp: boolean;
-            showInCustomerApp: boolean;
-        }[] | ({
-            name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            description: string | null;
-            supplierId: string | null;
-            sku: string;
-            category: import(".prisma/client").$Enums.Category;
-            categoryId: string | null;
-            brand: string;
-            model: string | null;
-            price: number;
-            cost: number;
-            imageUrl: string | null;
-            isAvailable: boolean;
-            showInPosApp: boolean;
-            showInCustomerApp: boolean;
-        } | {
-            name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            description: string | null;
-            supplierId: string | null;
-            sku: string;
-            category: import(".prisma/client").$Enums.Category;
-            categoryId: string | null;
-            brand: string;
-            model: string | null;
-            price: number;
-            cost: number;
-            imageUrl: string | null;
-            isAvailable: boolean;
-            showInPosApp: boolean;
-            showInCustomerApp: boolean;
-        })[] | ({
-            name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            description: string | null;
-            supplierId: string | null;
-            sku: string;
-            categoryId: string | null;
-            brand: string;
-            model: string | null;
-            imageUrl: string | null;
-            isAvailable: boolean;
-            sellingPrice: number;
-            compatibleDevices: string | null;
-            purchasePrice: number;
-        } | {
-            name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            description: string | null;
-            supplierId: string | null;
-            sku: string;
-            categoryId: string | null;
-            brand: string;
-            model: string | null;
-            imageUrl: string | null;
-            isAvailable: boolean;
-            sellingPrice: number;
-            compatibleDevices: string | null;
-            purchasePrice: number;
-        })[] | {
-            name: string;
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            description: string | null;
-            supplierId: string | null;
-            sku: string;
-            categoryId: string | null;
-            brand: string;
-            model: string | null;
-            imageUrl: string | null;
-            isAvailable: boolean;
-            sellingPrice: number;
-            compatibleDevices: string | null;
-            purchasePrice: number;
-        }[];
-        [x: number]: never;
-        [x: symbol]: never;
-    } | null;
-    branchStocks: {
-        id: string;
-        branchId: string;
-        createdAt: Date;
-        updatedAt: Date;
-        stockQty: number;
-        productId: string;
-        minStock: number;
-    }[];
-    name: string;
-    id: string;
-    createdAt: Date;
-    updatedAt: Date;
-    description: string | null;
-    supplierId: string | null;
-    sku: string;
-    category: import(".prisma/client").$Enums.Category;
-    categoryId: string | null;
-    brand: string;
-    model: string | null;
-    price: number;
-    cost: number;
-    imageUrl: string | null;
-    isAvailable: boolean;
-    showInPosApp: boolean;
-    showInCustomerApp: boolean;
-}[]>;
+declare function getProducts(filters?: ProductFilters): Promise<any[]>;
 declare function getProductById(id: string, branchId?: string): Promise<{
     stockQty: number;
     minStock: number;
+    branchStocks: {
+        id: string;
+        createdAt: Date;
+        branchId: string;
+        updatedAt: Date;
+        productId: string;
+        stockQty: number;
+        minStock: number;
+    }[];
     supplier: {
         name: string;
         id: string;
+        createdAt: Date;
+        branchId: string | null;
         email: string | null;
         isActive: boolean;
-        createdAt: Date;
-        phone: string | null;
         address: string | null;
+        phone: string | null;
         updatedAt: Date;
         contactName: string | null;
         notes: string | null;
@@ -400,15 +270,6 @@ declare function getProductById(id: string, branchId?: string): Promise<{
         icon: string | null;
         displayOrder: number;
     } | null;
-    branchStocks: {
-        id: string;
-        branchId: string;
-        createdAt: Date;
-        updatedAt: Date;
-        stockQty: number;
-        productId: string;
-        minStock: number;
-    }[];
     name: string;
     id: string;
     createdAt: Date;
@@ -564,8 +425,12 @@ export declare const inventoryService: {
         }>;
     };
     supplier: {
-        getAllSuppliers(): Promise<{
+        getAllSuppliers(branchId?: string): Promise<{
             totalPaid: number;
+            branch: {
+                name: string;
+                id: string;
+            } | null;
             _count: {
                 products: number;
             };
@@ -574,11 +439,12 @@ export declare const inventoryService: {
             }[];
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string | null;
             isActive: boolean;
-            createdAt: Date;
-            phone: string | null;
             address: string | null;
+            phone: string | null;
             updatedAt: Date;
             contactName: string | null;
             notes: string | null;
@@ -587,11 +453,14 @@ export declare const inventoryService: {
         getSupplierById(id: string): Promise<{
             productCount: number;
             totalPaid: number;
+            branch: {
+                name: string;
+                id: string;
+            } | null;
             products: {
                 name: string;
                 id: string;
                 sku: string;
-                stockQty: never;
             }[];
             payments: {
                 id: string;
@@ -605,11 +474,12 @@ export declare const inventoryService: {
             }[];
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string | null;
             isActive: boolean;
-            createdAt: Date;
-            phone: string | null;
             address: string | null;
+            phone: string | null;
             updatedAt: Date;
             contactName: string | null;
             notes: string | null;
@@ -618,11 +488,12 @@ export declare const inventoryService: {
         createSupplier(data: import("./supplier.service").CreateSupplierData): Promise<{
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string | null;
             isActive: boolean;
-            createdAt: Date;
-            phone: string | null;
             address: string | null;
+            phone: string | null;
             updatedAt: Date;
             contactName: string | null;
             notes: string | null;
@@ -631,11 +502,12 @@ export declare const inventoryService: {
         updateSupplier(id: string, data: import("./supplier.service").UpdateSupplierData): Promise<{
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string | null;
             isActive: boolean;
-            createdAt: Date;
-            phone: string | null;
             address: string | null;
+            phone: string | null;
             updatedAt: Date;
             contactName: string | null;
             notes: string | null;
@@ -660,17 +532,22 @@ export declare const inventoryService: {
                 reference: string | null;
                 paymentDate: Date;
             }[];
+            branch: {
+                name: string;
+                id: string;
+            } | null;
             _count: {
                 purchases: number;
                 products: number;
             };
             name: string;
             id: string;
+            createdAt: Date;
+            branchId: string | null;
             email: string | null;
             isActive: boolean;
-            createdAt: Date;
-            phone: string | null;
             address: string | null;
+            phone: string | null;
             updatedAt: Date;
             contactName: string | null;
             notes: string | null;

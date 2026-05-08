@@ -1,8 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.productController = void 0;
 const inventory_service_1 = require("../services/inventory.service");
 const cache_service_1 = require("../services/cache.service");
+const auditLog_service_1 = require("../services/auditLog.service");
+const client_1 = __importDefault(require("../prisma/client"));
 exports.productController = {
     async getAllProducts(req, res) {
         try {
@@ -34,6 +39,33 @@ exports.productController = {
             const product = await inventory_service_1.inventoryService.createProduct(req.body);
             cache_service_1.cacheService.invalidatePattern('products:*');
             cache_service_1.cacheService.invalidatePattern('product:*');
+            const user = req.user;
+            // Create BranchStock for the creator's branch so the product appears in branch-scoped inventory
+            const branchId = req.body.branchId || user?.branchId;
+            if (branchId) {
+                try {
+                    await client_1.default.branchStock.create({
+                        data: {
+                            branchId,
+                            productId: product.id,
+                            stockQty: req.body.stockQty || 0,
+                            minStock: req.body.minStock || 5,
+                        },
+                    });
+                }
+                catch (stockErr) {
+                    console.error('[PRODUCT] Failed to create branch stock:', stockErr);
+                }
+            }
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'PRODUCT_CREATED',
+                entity: 'Product',
+                entityId: product.id,
+                details: JSON.stringify({ name: req.body.name || `${req.body.brand} ${req.body.model}`, sku: product.sku }),
+                branchId: user?.branchId,
+                ipAddress: req.ip,
+            });
             res.status(201).json(product);
         }
         catch (error) {
@@ -46,6 +78,16 @@ exports.productController = {
             const product = await inventory_service_1.inventoryService.updateProduct(id, req.body);
             cache_service_1.cacheService.invalidatePattern('products:*');
             cache_service_1.cacheService.invalidatePattern('product:*');
+            const user = req.user;
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'PRODUCT_UPDATED',
+                entity: 'Product',
+                entityId: id,
+                details: JSON.stringify(req.body),
+                branchId: user?.branchId,
+                ipAddress: req.ip,
+            });
             res.json(product);
         }
         catch (error) {
@@ -58,6 +100,16 @@ exports.productController = {
             await inventory_service_1.inventoryService.deleteProduct(id);
             cache_service_1.cacheService.invalidatePattern('products:*');
             cache_service_1.cacheService.invalidatePattern('product:*');
+            const user = req.user;
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'PRODUCT_DELETED',
+                entity: 'Product',
+                entityId: id,
+                details: JSON.stringify({ deletedProductId: id }),
+                branchId: user?.branchId,
+                ipAddress: req.ip,
+            });
             res.status(204).send();
         }
         catch (error) {

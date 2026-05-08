@@ -3,6 +3,7 @@ import type { AuthRequest } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/auth.middleware';
 import { managerService, CreateManagerData, UpdateManagerData } from '../services/manager.service';
 import { AppError } from '../middleware/error.middleware';
+import { auditLogService } from '../services/auditLog.service';
 
 export const managerController = {
   async getAllManagers(req: Request, res: Response) {
@@ -12,11 +13,37 @@ export const managerController = {
 
   async createManager(req: Request<{}, {}, CreateManagerData>, res: Response) {
     const manager = await managerService.createManager(req.body);
+    const user = (req as any).user;
+
+    // Log user creation
+    auditLogService.logAction({
+      userId: user?.id,
+      action: 'USER_CREATED',
+      entity: 'User',
+      entityId: manager.id,
+      details: JSON.stringify({ name: req.body.name, email: req.body.email, role: (req.body as any).role || 'MANAGER' }),
+      branchId: user?.branchId,
+      ipAddress: req.ip,
+    });
+
     res.status(201).json(manager);
   },
 
   async updateManager(req: Request<{ id: string }, {}, UpdateManagerData>, res: Response) {
     const manager = await managerService.updateManager(req.params.id, req.body);
+    const user = (req as any).user;
+
+    // Log user update
+    auditLogService.logAction({
+      userId: user?.id,
+      action: 'USER_UPDATED',
+      entity: 'User',
+      entityId: req.params.id,
+      details: JSON.stringify(req.body),
+      branchId: user?.branchId,
+      ipAddress: req.ip,
+    });
+
     res.json(manager);
   },
 

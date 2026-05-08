@@ -8,6 +8,7 @@ export interface CreateSupplierData {
   phone?: string;
   address?: string;
   notes?: string;
+  branchId?: string;
 }
 
 export interface UpdateSupplierData {
@@ -31,8 +32,14 @@ export interface CreatePaymentData {
 }
 
 export const supplierService = {
-  async getAllSuppliers() {
+  async getAllSuppliers(branchId?: string) {
+    const where: any = {};
+    if (branchId) {
+      where.branchId = branchId;
+    }
+
     const suppliers = await prisma.supplier.findMany({
+      where,
       orderBy: { name: 'asc' },
       include: {
         _count: {
@@ -41,6 +48,9 @@ export const supplierService = {
         payments: {
           where: { paymentType: 'DEBIT' },
           select: { amount: true }
+        },
+        branch: {
+          select: { id: true, name: true }
         }
       }
     });
@@ -59,11 +69,14 @@ export const supplierService = {
       where: { id },
       include: {
         products: {
-          select: { id: true, name: true, sku: true, stockQty: true }
+          select: { id: true, name: true, sku: true }
         },
         payments: {
           orderBy: { createdAt: 'desc' },
           take: 50
+        },
+        branch: {
+          select: { id: true, name: true }
         }
       }
     });
@@ -103,6 +116,7 @@ export const supplierService = {
         phone: data.phone?.trim() || null,
         address: data.address?.trim() || null,
         notes: data.notes?.trim() || null,
+        branchId: data.branchId || null,
       }
     });
   },
@@ -131,6 +145,8 @@ export const supplierService = {
     if (updateData.phone !== undefined) updateData.phone = updateData.phone?.trim() || null;
     if (updateData.address !== undefined) updateData.address = updateData.address?.trim() || null;
     if (updateData.notes !== undefined) updateData.notes = updateData.notes?.trim() || null;
+    // Don't allow changing branchId through update
+    delete updateData.branchId;
 
     return prisma.supplier.update({
       where: { id },
@@ -224,6 +240,9 @@ export const supplierService = {
         },
         _count: {
           select: { products: true, purchases: true }
+        },
+        branch: {
+          select: { id: true, name: true }
         }
       }
     });

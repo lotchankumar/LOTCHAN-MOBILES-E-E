@@ -102,9 +102,12 @@ exports.baseManagerService = {
     }
 };
 exports.staffService = {
-    async getAllStaff() {
+    async getAllStaff(branchId) {
         return client_1.default.user.findMany({
-            where: { role: { in: ['STAFF', 'TECHNICIAN'] } },
+            where: {
+                role: { in: ['STAFF', 'TECHNICIAN'] },
+                ...(branchId && { branchId }),
+            },
             include: {
                 branch: true,
                 manager: {

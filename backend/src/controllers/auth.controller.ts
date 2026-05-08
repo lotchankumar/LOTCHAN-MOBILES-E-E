@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../prisma/client';
 import { AppError } from '../middleware/error.middleware';
-import { sendOTPEmail, generateOTP } from '../utils/email';
+import { sendOTPEmail, sendOTPToAuthority, generateOTP } from '../utils/email';
+import { auditLogService } from '../services/auditLog.service';
 
 // ==================== SEED ADMIN ====================
 export const seedAdmin = async (req: Request, res: Response, next: NextFunction) => {
@@ -107,13 +108,26 @@ export const staffLogin = async (req: Request, res: Response, next: NextFunction
   try {
     const { email, password } = req.body;
     
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: { branch: true } 
+    });
     if (!user || !user.passwordHash) {
       throw new AppError('Invalid email or password', 401);
     }
     
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
+      // Log failed login attempt
+      auditLogService.logAction({
+        userId: user.id,
+        action: 'LOGIN_FAILED',
+        entity: 'User',
+        entityId: user.id,
+        details: JSON.stringify({ email, reason: 'Invalid password' }),
+        branchId: user.branchId || undefined,
+        ipAddress: req.ip,
+      });
       throw new AppError('Invalid email or password', 401);
     }
     
@@ -122,10 +136,28 @@ export const staffLogin = async (req: Request, res: Response, next: NextFunction
       process.env.JWT_SECRET!,
       { expiresIn: '24h' }
     );
+
+    // Log successful login
+    auditLogService.logAction({
+      userId: user.id,
+      action: 'LOGIN',
+      entity: 'User',
+      entityId: user.id,
+      details: JSON.stringify({ email, role: user.role, branch: user.branch?.name }),
+      branchId: user.branchId || undefined,
+      ipAddress: req.ip,
+    });
     
     res.json({
       token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role }
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        role: user.role,
+        branchId: user.branchId,
+        branchName: user.branch?.name
+      }
     });
   } catch (error) {
     next(error);
@@ -146,9 +178,19 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
     } else {
       const user = await prisma.user.findUnique({
         where: { id },
-        select: { id: true, email: true, name: true, role: true }
+        select: { 
+          id: true, 
+          email: true, 
+          name: true, 
+          role: true,
+          branchId: true,
+          branch: { select: { name: true } }
+        }
       });
-      res.json(user);
+      res.json({
+        ...user,
+        branchName: user?.branch?.name
+      });
     }
   } catch (error) {
     next(error);
@@ -321,6 +363,200 @@ export const resetAdminPassword = async (req: Request, res: Response, next: Next
       message: 'Password reset successfully',
       email
     });
+  } catch (error) {
+    next(error);
+  }
+};
+// ==================== UNIVERSAL FORGOT PASSWORD - REQUEST OTP ====================
+// Staff/Technician → OTP sent to their branch manager
+// Manager → OTP sent to the admin
+export const requestPasswordReset = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+    if (!email) throw new AppError('Email is required', 400);
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        manager: { select: { id: true, name: true, email: true } },
+        branch: { select: { name: true } },
+      }
+    });
+
+    if (!user) throw new AppError('No account found with this email', 404);
+    if (!user.isActive) throw new AppError('Your account is deactivated. Contact your manager.', 403);
+
+    const otp = generateOTP(6);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Store OTP against the requesting user's email
+    await prisma.passwordResetToken.create({ data: { email, otp, expiresAt } });
+
+    let otpSentTo = '';
+    let authorityLabel = '';
+
+    if (user.role === 'STAFF' || user.role === 'TECHNICIAN') {
+      // Find branch manager
+      if (!user.manager) {
+        // Fallback: try to find any manager in the same branch
+        const branchManager = user.branchId
+          ? await prisma.user.findFirst({
+              where: { branchId: user.branchId, role: 'MANAGER' },
+              select: { name: true, email: true }
+            })
+          : null;
+        if (!branchManager) {
+          throw new AppError('No manager assigned to your account. Contact your admin.', 400);
+        }
+        try {
+          await sendOTPToAuthority({
+            authorityEmail: branchManager.email,
+            authorityName: branchManager.name,
+            requesterEmail: user.email,
+            requesterName: user.name,
+            requesterRole: user.role,
+            otp,
+          });
+        } catch (e) {
+          console.error('Email send failed:', e);
+          if (process.env.NODE_ENV !== 'production') console.log(`[DEV] OTP for ${email}: ${otp}`);
+        }
+        otpSentTo = branchManager.email;
+        authorityLabel = 'your branch manager';
+      } else {
+        try {
+          await sendOTPToAuthority({
+            authorityEmail: user.manager.email,
+            authorityName: user.manager.name,
+            requesterEmail: user.email,
+            requesterName: user.name,
+            requesterRole: user.role,
+            otp,
+          });
+        } catch (e) {
+          console.error('Email send failed:', e);
+          if (process.env.NODE_ENV !== 'production') console.log(`[DEV] OTP for ${email}: ${otp}`);
+        }
+        otpSentTo = user.manager.email;
+        authorityLabel = 'your branch manager';
+      }
+    } else if (user.role === 'MANAGER') {
+      // Find admin
+      const admin = await prisma.user.findFirst({
+        where: { role: 'ADMIN' },
+        select: { name: true, email: true }
+      });
+      if (!admin) throw new AppError('No admin account found. Contact support.', 500);
+      try {
+        await sendOTPToAuthority({
+          authorityEmail: admin.email,
+          authorityName: admin.name,
+          requesterEmail: user.email,
+          requesterName: user.name,
+          requesterRole: 'Manager',
+          otp,
+        });
+      } catch (e) {
+        console.error('Email send failed:', e);
+        if (process.env.NODE_ENV !== 'production') console.log(`[DEV] OTP for ${email}: ${otp}`);
+      }
+      otpSentTo = admin.email;
+      authorityLabel = 'the admin';
+    } else if (user.role === 'ADMIN') {
+      // Admin resets their own password — OTP goes to themselves
+      try {
+        await sendOTPEmail(email, otp);
+      } catch (e) {
+        console.error('Email send failed:', e);
+        if (process.env.NODE_ENV !== 'production') console.log(`[DEV] OTP for ${email}: ${otp}`);
+      }
+      otpSentTo = email;
+      authorityLabel = 'your email';
+    }
+
+    res.json({
+      message: `OTP sent to ${authorityLabel}. Ask them for the code to continue.`,
+      otpSentTo: otpSentTo.replace(/(.{3}).*(@.*)/, '$1***$2'), // partial mask
+      role: user.role,
+      expiresIn: '15 minutes'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== UNIVERSAL VERIFY OTP ====================
+export const verifyPasswordResetOTP = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) throw new AppError('Email and OTP are required', 400);
+
+    const resetToken = await prisma.passwordResetToken.findFirst({
+      where: { email, otp, isUsed: false },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!resetToken) throw new AppError('Invalid OTP. Please check and try again.', 400);
+    if (new Date() > resetToken.expiresAt) throw new AppError('OTP has expired. Please request a new one.', 400);
+
+    await prisma.passwordResetToken.update({
+      where: { id: resetToken.id },
+      data: { isUsed: true }
+    });
+
+    const resetJwt = jwt.sign(
+      { email, purpose: 'password-reset' },
+      process.env.JWT_SECRET!,
+      { expiresIn: '10m' }
+    );
+
+    res.json({ message: 'OTP verified. You may now set a new password.', resetToken: resetJwt, expiresIn: '10 minutes' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== UNIVERSAL RESET PASSWORD ====================
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) throw new AppError('Reset token is required', 401);
+    if (!email || !newPassword || !confirmPassword) throw new AppError('All fields are required', 400);
+    if (newPassword !== confirmPassword) throw new AppError('Passwords do not match', 400);
+    if (newPassword.length < 8) throw new AppError('Password must be at least 8 characters', 400);
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      throw new AppError('Reset link has expired. Please request a new OTP.', 401);
+    }
+
+    if (decoded.email !== email || decoded.purpose !== 'password-reset') {
+      throw new AppError('Invalid reset token', 401);
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) throw new AppError('Account not found', 404);
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { email }, data: { passwordHash: hashedPassword } });
+    await prisma.passwordResetToken.deleteMany({ where: { email } });
+
+    // Log password reset
+    auditLogService.logAction({
+      userId: user.id,
+      action: 'PASSWORD_RESET',
+      entity: 'User',
+      entityId: user.id,
+      details: JSON.stringify({ email, role: user.role }),
+      branchId: user.branchId || undefined,
+      ipAddress: req.ip,
+    });
+
+    res.json({ message: 'Password updated successfully. You can now log in with your new password.' });
   } catch (error) {
     next(error);
   }

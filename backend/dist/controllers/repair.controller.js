@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.repairController = void 0;
 const repair_service_1 = require("../services/repair.service");
 const client_1 = __importDefault(require("../prisma/client"));
+const auditLog_service_1 = require("../services/auditLog.service");
 exports.repairController = {
     async createRepair(req, res) {
         try {
@@ -21,6 +22,16 @@ exports.repairController = {
                 advancePaid,
                 assignedToId,
                 branchId: req.body.branchId || user?.branchId
+            });
+            // Log repair creation
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'REPAIR_CREATED',
+                entity: 'RepairJob',
+                entityId: job.id,
+                details: JSON.stringify({ ticketNumber: job.ticketNumber, deviceModel, estimatedCost }),
+                branchId: req.body.branchId || user?.branchId,
+                ipAddress: req.ip,
             });
             res.status(201).json(job);
         }
@@ -49,7 +60,18 @@ exports.repairController = {
         try {
             const id = req.params.id;
             const { status } = req.body;
+            const user = req.user;
             const job = await repair_service_1.repairService.updateRepairStatus(id, status);
+            // Log repair status update
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'REPAIR_STATUS_UPDATED',
+                entity: 'RepairJob',
+                entityId: id,
+                details: JSON.stringify({ ticketNumber: job.ticketNumber, newStatus: status }),
+                branchId: user?.branchId,
+                ipAddress: req.ip,
+            });
             res.json(job);
         }
         catch (error) {
@@ -60,8 +82,19 @@ exports.repairController = {
     async addParts(req, res) {
         try {
             const id = req.params.id;
-            const { parts } = req.body; // Array<{ productId: string; quantity: number }>
+            const { parts } = req.body;
+            const user = req.user;
             await repair_service_1.repairService.usePartsInRepair(id, parts);
+            // Log parts added
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id,
+                action: 'REPAIR_PARTS_ADDED',
+                entity: 'RepairJob',
+                entityId: id,
+                details: JSON.stringify({ partsCount: parts?.length }),
+                branchId: user?.branchId,
+                ipAddress: req.ip,
+            });
             res.status(200).json({ success: true, message: 'Parts added to repair successfully' });
         }
         catch (error) {

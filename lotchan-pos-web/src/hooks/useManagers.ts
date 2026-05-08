@@ -6,6 +6,7 @@ export interface Branch {
   name: string;
   address?: string;
   phone?: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -107,12 +108,14 @@ export type CreateBranchData = {
   name: string;
   address?: string;
   phone?: string;
+  isActive?: boolean;
 };
 
 export type UpdateBranchData = {
   name?: string;
   address?: string;
   phone?: string;
+  isActive?: boolean;
 };
 
 export const useBranchesQuery = () => {
@@ -203,11 +206,11 @@ export const useDeleteBranch = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const deleteBranch = async (id: string, refetchBranches: () => void) => {
+  const deleteBranch = async (id: string, otp: string, refetchBranches: () => void) => {
     setLoading(true);
     setError(null);
     try {
-      await api.delete(`/admin/branches/${id}`);
+      await api.delete(`/admin/branches/${id}`, { data: { otp } });
       refetchBranches();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete branch');
@@ -218,6 +221,26 @@ export const useDeleteBranch = () => {
   };
 
   return { deleteBranch, loading, error };
+};
+
+export const useRequestDeleteBranchOtp = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const requestOtp = async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.post(`/admin/branches/${id}/delete-otp`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to request OTP');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { requestOtp, loading, error };
 };
 
 

@@ -14,6 +14,7 @@ export const LoginPage = () => {
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetStep, setResetStep] = useState<'request' | 'verify' | 'reset'>('request');
   const [resetEmail, setResetEmail] = useState('');
+  const [resetRoleHint, setResetRoleHint] = useState(''); // message from server about who received OTP
   const [otp, setOtp] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -29,15 +30,14 @@ export const LoginPage = () => {
     setResetStatus('loading');
     setResetError('');
     try {
-      const response = await fetch('/api/auth/admin/request-password-reset', {
+      const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail }),
       });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || data.error || 'Request failed');
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || 'Request failed');
+      setResetRoleHint(data.message || '');
       setResetStatus('idle');
       setResetStep('verify');
     } catch (err: any) {
@@ -52,16 +52,13 @@ export const LoginPage = () => {
     setResetStatus('loading');
     setResetError('');
     try {
-      const response = await fetch('/api/auth/admin/verify-otp', {
+      const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail, otp }),
       });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || data.error || 'Verification failed');
-      }
       const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || 'Verification failed');
       setResetToken(data.resetToken);
       setResetStatus('idle');
       setResetStep('reset');
@@ -81,18 +78,13 @@ export const LoginPage = () => {
     setResetStatus('loading');
     setResetError('');
     try {
-      const response = await fetch('/api/auth/admin/reset-password', {
+      const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${resetToken}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resetToken}` },
         body: JSON.stringify({ email: resetEmail, newPassword, confirmPassword }),
       });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || data.error || 'Reset failed');
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || 'Reset failed');
       setResetStatus('success');
     } catch (err: any) {
       setResetError(err.message);
@@ -104,6 +96,7 @@ export const LoginPage = () => {
     setShowForgotModal(false);
     setResetStep('request');
     setResetEmail('');
+    setResetRoleHint('');
     setOtp('');
     setResetToken('');
     setNewPassword('');
@@ -262,15 +255,13 @@ export const LoginPage = () => {
             <div className="space-y-1">
               <div className="flex justify-between items-center px-1">
                 <label className="text-[12px] font-medium leading-none text-[#c4c6cf] uppercase tracking-wider">Access Code</label>
-                {selectedRole === 'ADMIN' && (
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotModal(true)}
-                    className="text-[10px] text-[#aec8f0] hover:text-[#a0c9ff] transition-colors font-medium uppercase tracking-tighter"
-                  >
-                    Forgot Password?
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-[10px] text-[#aec8f0] hover:text-[#a0c9ff] transition-colors font-medium uppercase tracking-tighter"
+                >
+                  Forgot Password?
+                </button>
               </div>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#8d9198] text-lg" data-icon="lock_open">lock_open</span>
@@ -353,12 +344,17 @@ export const LoginPage = () => {
       {showForgotModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={closeModal}>
           <div className="glass-panel bg-[#001c37]/95 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-[#aec8f0]/20 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold mb-4 text-[#aec8f0]">Reset Admin Password</h2>
+            <h2 className="text-xl font-bold mb-1 text-[#aec8f0]">Reset Password</h2>
+            <p className="text-xs text-slate-400 mb-5">
+              {resetStep === 'request' && 'Enter your account email. An OTP will be sent to your manager or admin.'}
+              {resetStep === 'verify' && 'Enter the OTP you received from your authority.'}
+              {resetStep === 'reset' && 'Set your new password below.'}
+            </p>
 
             {resetStep === 'request' && (
               <form onSubmit={handleRequestOTP} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-[#c4c6cf]">Admin Email</label>
+                  <label className="block text-sm font-medium text-[#c4c6cf]">Your Account Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-[#8d9198]" />
                     <input
@@ -366,26 +362,34 @@ export const LoginPage = () => {
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       className="w-full bg-[#001429] border border-[#8d9198]/20 rounded-lg py-2.5 pl-10 pr-4 text-[#d2e4ff] focus:ring-2 focus:ring-[#aec8f0] focus:border-transparent outline-none transition-all placeholder:text-[#8d9198]/50"
-                      placeholder="admin@example.com"
+                      placeholder="your-email@example.com"
                       required
                     />
                   </div>
+                </div>
+                <div className="p-3 bg-blue-900/20 border border-blue-400/20 rounded-md text-xs text-slate-400">
+                  <span className="text-blue-300 font-semibold">How it works: </span>
+                  Staff &amp; Technicians → OTP sent to branch manager.<br/>
+                  Managers → OTP sent to admin.<br/>
+                  Admin → OTP sent to your own email.
                 </div>
                 <button
                   type="submit"
                   disabled={resetStatus === 'loading'}
                   className="signature-gradient w-full py-2.5 rounded-lg text-[#153152] font-medium shadow-lg shadow-[#aec8f0]/20 hover:shadow-[#aec8f0]/40 transition-all active:scale-95 disabled:opacity-50"
                 >
-                  {resetStatus === 'loading' ? 'Sending...' : 'Send Reset OTP'}
+                  {resetStatus === 'loading' ? 'Sending OTP...' : 'Send OTP'}
                 </button>
               </form>
             )}
 
             {resetStep === 'verify' && (
               <form onSubmit={handleVerifyOTP} className="space-y-4">
-                <div className="p-3 bg-[#aec8f0]/10 text-[#aec8f0] text-sm rounded-md mb-4 border border-[#aec8f0]/20">
-                  OTP has been sent to your email (or check terminal in dev mode).
-                </div>
+                {resetRoleHint && (
+                  <div className="p-3 bg-green-900/20 border border-green-400/30 rounded-md text-sm text-green-300">
+                    ✅ {resetRoleHint}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-[#c4c6cf]">Enter OTP</label>
                   <div className="relative">
@@ -393,9 +397,9 @@ export const LoginPage = () => {
                     <input
                       type="text"
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      className="w-full bg-[#001429] border border-[#8d9198]/20 rounded-lg py-2.5 pl-10 pr-4 text-[#d2e4ff] focus:ring-2 focus:ring-[#aec8f0] focus:border-transparent outline-none transition-all placeholder:text-[#8d9198]/50"
-                      placeholder="6-digit OTP"
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-[#001429] border border-[#8d9198]/20 rounded-lg py-2.5 pl-10 pr-4 text-[#d2e4ff] focus:ring-2 focus:ring-[#aec8f0] focus:border-transparent outline-none transition-all placeholder:text-[#8d9198]/50 tracking-widest text-lg font-mono"
+                      placeholder="000000"
                       required
                       maxLength={6}
                     />
@@ -403,10 +407,13 @@ export const LoginPage = () => {
                 </div>
                 <button
                   type="submit"
-                  disabled={resetStatus === 'loading'}
+                  disabled={resetStatus === 'loading' || otp.length < 6}
                   className="signature-gradient w-full py-2.5 rounded-lg text-[#153152] font-medium shadow-lg shadow-[#aec8f0]/20 hover:shadow-[#aec8f0]/40 transition-all active:scale-95 disabled:opacity-50"
                 >
                   {resetStatus === 'loading' ? 'Verifying...' : 'Verify OTP'}
+                </button>
+                <button type="button" onClick={() => { setResetStep('request'); setOtp(''); setResetError(''); }} className="w-full text-xs text-slate-400 hover:text-[#aec8f0] transition-colors py-1">
+                  ← Resend OTP / Change Email
                 </button>
               </form>
             )}

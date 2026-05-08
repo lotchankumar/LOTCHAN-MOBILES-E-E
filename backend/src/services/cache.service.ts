@@ -18,6 +18,13 @@ export const cacheService = {
     cache.set(key, fresh, ttlSeconds);
     return fresh;
   },
+  set<T>(key: string, value: T, ttlSeconds: number = 60): void {
+    cache.set(key, value, ttlSeconds);
+  },
+
+  get<T>(key: string): T | undefined {
+    return cache.get<T>(key);
+  },
 
   invalidate(key: string): void {
     cache.del(key);

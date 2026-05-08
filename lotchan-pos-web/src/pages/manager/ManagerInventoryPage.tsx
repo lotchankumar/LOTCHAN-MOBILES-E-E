@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../../store/auth.store';
 import { managerService, type ProductInventory, type ProductUpdateRequest, type CreateProductRequest, type ProductCategory, type Supplier } from '../../services/manager.service';
-import { AlertTriangle, PackageOpen, Plus } from 'lucide-react';
+import { AlertTriangle, PackageOpen, Plus, Building2 } from 'lucide-react';
 
 export const ManagerInventoryPage = () => {
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inventory, setInventory] = useState<ProductInventory[]>([]);
@@ -194,7 +196,16 @@ export const ManagerInventoryPage = () => {
   return (
     <div className="space-y-6 pos-fade-in">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-[#d2e4ff]">Inventory Management</h2>
+        <div>
+          {user?.branchName && (
+            <div className="flex items-center gap-2 mb-1">
+              <Building2 className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs font-medium text-cyan-400 uppercase tracking-widest">{user.branchName}</span>
+            </div>
+          )}
+          <h2 className="text-2xl font-bold text-[#d2e4ff]">Product Inventory Management</h2>
+          <p className="text-xs text-slate-500 mt-0.5">{inventory.length} products · branch-scoped view</p>
+        </div>
         <div className="flex gap-3">
           <button
             onClick={() => setShowNewProduct(true)}

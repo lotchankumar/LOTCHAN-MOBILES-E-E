@@ -5,7 +5,12 @@ const supplier_service_1 = require("../services/supplier.service");
 exports.supplierController = {
     async getAllSuppliers(req, res) {
         try {
-            const suppliers = await supplier_service_1.supplierService.getAllSuppliers();
+            const authUser = req.user;
+            // Managers see only their branch's suppliers; Admins can optionally filter by branch
+            const branchId = authUser?.role === 'MANAGER'
+                ? authUser.branchId
+                : req.query.branchId;
+            const suppliers = await supplier_service_1.supplierService.getAllSuppliers(branchId);
             const mapped = suppliers.map((s) => ({
                 id: s.id,
                 name: s.name,
@@ -18,6 +23,8 @@ exports.supplierController = {
                 totalPaid: s.totalPaid || 0,
                 isActive: s.isActive,
                 productCount: s._count?.products || 0,
+                branchId: s.branchId,
+                branchName: s.branch?.name || null,
                 createdAt: s.createdAt,
                 updatedAt: s.updatedAt,
             }));
@@ -39,7 +46,13 @@ exports.supplierController = {
     },
     async createSupplier(req, res) {
         try {
-            const supplier = await supplier_service_1.supplierService.createSupplier(req.body);
+            const authUser = req.user;
+            // Auto-assign the manager's branchId when creating a supplier
+            const branchId = req.body.branchId || authUser?.branchId || null;
+            const supplier = await supplier_service_1.supplierService.createSupplier({
+                ...req.body,
+                branchId,
+            });
             res.status(201).json({ success: true, data: supplier });
         }
         catch (error) {

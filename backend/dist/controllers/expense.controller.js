@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.expenseController = void 0;
 const client_1 = __importDefault(require("../prisma/client"));
 const error_middleware_1 = require("../middleware/error.middleware");
+const auditLog_service_1 = require("../services/auditLog.service");
 exports.expenseController = {
     async createExpense(req, res) {
         try {
@@ -15,6 +16,16 @@ exports.expenseController = {
             }
             const expense = await client_1.default.expense.create({
                 data: { managerId, description, amount },
+            });
+            const user = req.user;
+            auditLog_service_1.auditLogService.logAction({
+                userId: user?.id || managerId,
+                action: 'EXPENSE_CREATED',
+                entity: 'Expense',
+                entityId: expense.id,
+                details: JSON.stringify({ description, amount }),
+                branchId: user?.branchId,
+                ipAddress: req.ip,
             });
             res.status(201).json({ success: true, data: expense });
         }

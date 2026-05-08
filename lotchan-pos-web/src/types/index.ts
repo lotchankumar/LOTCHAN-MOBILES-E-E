@@ -15,6 +15,7 @@ export interface User {
   email: string;
   role: UserRole;
   branchId?: string | null;
+  branchName?: string;
   managerId?: string | null;
   isActive?: boolean;
 }

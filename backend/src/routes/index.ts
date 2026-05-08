@@ -38,10 +38,16 @@ import managerRoutes from './manager.routes';
 import branchRoutes from './branch.routes';
 import staffRoutes from './staff.routes';
 import { staffController } from '../controllers/staff.controller';
+import { auditLogController } from '../controllers/auditLog.controller';
 
 router.use('/admin/branches', branchRoutes);
 router.use('/admin', managerRoutes);
 router.use('/admin', staffRoutes);
 router.get('/admin/organization-hierarchy', authenticate, requireRole(['ADMIN']), staffController.getOrganizationHierarchy);
+
+// Audit Logs (Admin only)
+router.get('/admin/audit-logs/stats', authenticate, requireRole(['ADMIN']), auditLogController.getStats);
+router.get('/admin/audit-logs/export', authenticate, requireRole(['ADMIN']), auditLogController.exportCSV);
+router.get('/admin/audit-logs', authenticate, requireRole(['ADMIN']), auditLogController.getLogs);
 
 export default router;
